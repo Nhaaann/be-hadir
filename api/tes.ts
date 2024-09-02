@@ -1,6 +1,10 @@
 import { PrismaClient } from '@prisma/client';
+import { AbsenGateway } from 'src/app/absen/absen.gateway';
 
-export async function handleAutoAbsenSiswa(prisma: PrismaClient) {
+export async function handleAutoAbsenSiswa(
+  prisma: PrismaClient,
+  absenGateway: AbsenGateway,
+) {
   const currentTime = new Date();
   const currentDate = currentTime.toISOString().split('T')[0];
   const currentDay = new Intl.DateTimeFormat('id-ID', {
@@ -143,9 +147,7 @@ export async function handleAutoAbsenSiswa(prisma: PrismaClient) {
           message: `Anda belum absen hari ini pada mata pelajaran ${jamDetailJadwal.subject_code_entity.mapel.nama_mapel}`,
         };
 
-        this.absenGateway.server
-          .to(payload.studentId)
-          .emit('notifSiswas', payload);
+        absenGateway.server.to(payload.studentId).emit('notifSiswas', payload);
 
         const notifikasi = await prisma.notifikasi.create({
           data: {
@@ -199,7 +201,7 @@ export async function handleAutoAbsenSiswa(prisma: PrismaClient) {
   }
 }
 
-export async function handleAutoAbsenGuru(prisma: PrismaClient) {
+export async function handleAutoAbsenGuru(prisma: PrismaClient, absenGateway: AbsenGateway,) {
   const currentTime = new Date();
   const currentDate = currentTime.toISOString().split('T')[0];
   const currentDay = new Intl.DateTimeFormat('id-ID', {
@@ -357,7 +359,7 @@ export async function handleAutoAbsenGuru(prisma: PrismaClient) {
           data: absentStudentNames,
         };
 
-        let dataEmit = this.absenGateway.server
+        let dataEmit = absenGateway.server
           .to(payload.guruId)
           .emit('notifGurus', payload);
 
