@@ -84,7 +84,7 @@ model guru {
   absen_guru          absen_guru[]
   absen_kelas         absen_kelas[]
   jam_detail_jadwal   jam_detail_jadwal?    @relation(fields: [jadwal_detail_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_08f6654efacdc7bec2119e0aaee")
-  user                user?                 @relation(fields: [userId], references: [id], onDelete: NoAction, map: "FK_ea4aeffc90a824f19811ee289e1")
+  user                user?                 @relation(fields: [userId], references: [id], onDelete: Cascade, map: "FK_ea4aeffc90a824f19811ee289e1")
   mapel               mapel[]
   rekap_absen         rekap_absen[]
   subject_code_entity subject_code_entity[]
