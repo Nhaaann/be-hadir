@@ -286,7 +286,7 @@ export class JadwalService {
           where: { id: jdDto.kelas },
         });
         const subject_code = await this.prisma.subject_code_entity.findUnique({
-          where: { id: jdDto.subject_code },
+          where: { id: parseInt(jdDto.subject_code, 10) },
         });
 
         // Check if Kelas and SubjectCode entities are found
