@@ -42,7 +42,7 @@ export class AuthService {
     return userId;
   }
 
-  async getUsers(query: queryUSerDTO): Promise<ResponseSuccess> {
+  async getUsers(query: queryUSerDTO): Promise<any> {
     const { role, page = 1, pageSize = 10, nama } = query;
 
     // Build query parameters
@@ -55,20 +55,30 @@ export class AuthService {
       filter.nama = { contains: nama, mode: 'insensitive' }; // Case-insensitive search
     }
 
-    // Fetch users with pagination
-    const users = await this.prisma.user.findMany({
-      where: filter,
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    });
+    try {
+      // Fetch users with pagination
+      const users = await this.prisma.user.findMany({
+        where: filter,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      });
 
-    // Get the total count of users matching the filter
-    const totalCount = await this.prisma.user.count({ where: filter });
+      // Get the total count of users matching the filter
+      const totalCount = await this.prisma.user.count({ where: filter });
 
-    return this._success(
-      `Daftar Pengguna, Jumlah User: ${totalCount}`,
-      users,
-    );
+      return {
+        success: 'Succeess',
+        message: `Daftar Pengguna, Jumlah User: ${totalCount}`,
+        data: users,
+      };
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      return {
+        // success: false,
+        message: 'Error fetching users',
+        data: [],
+      };
+    }
   }
 
   private _success(message: string, data?: any): ResponseSuccess {
@@ -121,7 +131,7 @@ export class AuthService {
     const userToken = await this.prisma.reset_password.findFirst({
       where: {
         token,
-        user_id: userId
+        user_id: userId,
       },
     });
 
