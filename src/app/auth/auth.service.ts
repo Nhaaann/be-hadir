@@ -91,35 +91,42 @@ export class AuthService {
 
   async register(payload: RegisterDto): Promise<any> {
     // Check if user already exists
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: payload.email },
-    });
+    try {
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: payload.email },
+      });
 
-    if (existingUser) {
-      throw new HttpException(
-        'User dengan email ini sudah terdaftar',
-        HttpStatus.BAD_REQUEST,
-      );
+      if (existingUser) {
+        throw new HttpException(
+          'User dengan email ini sudah terdaftar',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      // Hash the password
+      const hashedPassword = await hash(payload.password, 12);
+
+      // Create a new user
+      const user = await this.prisma.user.create({
+        data: {
+          ...payload,
+          role: payload.role as any,
+          password: hashedPassword,
+          avatar: 'http://localhost:2009/uploads/default-avatar.svg', // Set default avatar or other default values
+        },
+      });
+
+      return {
+        status: 'Success',
+        message: 'Pendaftaran berhasil',
+        data: user,
+      };
+    } catch (error) {
+      console.error('Error during user registration:', error);
+      return {
+        message: `Error during user registration: ${error.message}`,
+      };
     }
-
-    // Hash the password
-    const hashedPassword = await hash(payload.password, 12);
-
-    // Create a new user
-    const user = await this.prisma.user.create({
-      data: {
-        ...payload,
-        role: payload.role as any,
-        password: hashedPassword,
-        avatar: 'http://localhost:2009/uploads/default-avatar.svg', // Set default avatar or other default values
-      },
-    });
-
-    return {
-      status: 'Success',
-      message: 'Pendaftaran berhasil',
-      data: user,
-    };
   }
 
   async resetPassword(
