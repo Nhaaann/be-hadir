@@ -16,7 +16,7 @@ export function isLocationWithinRange(
     // targetLatitude,
     // targetLongitude,
   );
-  return distance <= 100; // Radius dalam meter
+  return distance <= 100 // Radius dalam meter
 }
 
 // Fungsi untuk menghitung jarak antara dua koordinat
