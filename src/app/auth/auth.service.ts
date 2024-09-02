@@ -81,13 +81,7 @@ export class AuthService {
     }
   }
 
-  private _success(message: string, data?: any): ResponseSuccess {
-    return {
-      status: 'Success',
-      message: message,
-      data: data,
-    };
-  }
+  
 
   async register(payload: RegisterDto): Promise<any> {
     // Check if user already exists
@@ -221,7 +215,7 @@ export class AuthService {
 
       return {
         status: 'Success',
-        message: 'Success Update Token',
+        message: 'Success Login',
         data: {
           ...user,
           access_token: access_token,

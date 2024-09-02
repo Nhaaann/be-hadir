@@ -55,7 +55,7 @@ export class GuruService {
     // Create and save guru with the user ID and subject codes
     const guru = await this.prisma.guru.create({
       data: {
-        id: this.req.user.id,
+        id: user.id,
         initial_schedule,
         user: {
           connect: { id: user.id },
@@ -72,7 +72,7 @@ export class GuruService {
 
     return {
       status: 'Success',
-      message: 'OK',
+      message: 'OK berhasil register guru',
       data: guru,
     };
   }
