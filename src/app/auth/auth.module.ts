@@ -19,11 +19,14 @@ import { GuruController } from './guru/guru.controller';
 import { JwtModule } from '@nestjs/jwt';
 import { PrismaModule } from 'src/prisma/prisma.module';
 // import { SubjectCodeEntity } from '../subject_code/subject_code.entity';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 @Module({
   imports: [
     PrismaModule,
     JwtModule.register({
+      secret: process.env.JWT_SECRET,
       global: true,
       signOptions: {
         algorithm: 'HS256',
