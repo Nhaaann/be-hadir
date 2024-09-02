@@ -16,7 +16,7 @@ export default async function handler(req, res) {
         .json({ message: 'Auto Absen processes executed successfully.' });
     } catch (error) {
       console.error('Error running auto-absen processes:', error);
-      res.status(500).json({ message: 'Error running auto-absen processes.' });
+      res.status(500).json({ message: 'Error running auto-absen processes.' })
     }
   } else {
     res.status(405).json({ message: 'Method not allowed' });
