@@ -47,10 +47,7 @@ export class GuruService {
     }
 
     // Map to generate subject codes with mapelId and initial_schedule
-    const subjectCodes = mapelEntities.map((subject, index) => ({
-      code: `${initial_schedule}${index + 1}`, // Correctly formatted as a string
-      mapelId: subject.id,
-    }));
+    
 
     // Create and save guru with the user ID and subject codes
     const guru = await this.prisma.guru.create({
@@ -58,16 +55,26 @@ export class GuruService {
         id: user.id,
         initial_schedule,
         user: {
-          connect: { id: user.id },
+          connect: user,
         },
-        subject_code_entity: {
-          create: subjectCodes.map((subject) => ({
-            code: subject.code, // Use code as a string
-            mapel: { connect: { id: subject.mapelId } }, // Correctly connect mapel
-            initial_schedule, // Include only if needed
-          })),
+        mapel: {
+          connect: mapelEntities,
         },
       },
+    });
+
+    mapelEntities.map((subject, index) => {
+      return this.prisma.subject_code_entity.create({
+        data: {
+          code: `${initial_schedule}${index + 1}`,
+          guru: {
+            connect: guru
+          },
+          mapel: {
+            connect: subject
+          },
+        }
+      });
     });
 
     return {

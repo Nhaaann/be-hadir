@@ -75,7 +75,7 @@ model geo_location {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model guru {
   id                  Int                   @id(map: "pk_guru")
-  initial_schedule    String                @db.VarChar(1)
+  initial_schedule    String?
   created_at          DateTime              @default(now()) @db.Timestamp(6)
   updated_at          DateTime              @default(now()) @db.Timestamp(6)
   is_absen_today      Boolean               @default(false)
@@ -85,9 +85,10 @@ model guru {
   absen_kelas         absen_kelas[]
   jam_detail_jadwal   jam_detail_jadwal?    @relation(fields: [jadwal_detail_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_08f6654efacdc7bec2119e0aaee")
   user                user?                 @relation(fields: [userId], references: [id], onDelete: NoAction, map: "FK_ea4aeffc90a824f19811ee289e1")
-  guru_mapel_mapel    guru_mapel_mapel[]
+  mapel               mapel[]
   rekap_absen         rekap_absen[]
   subject_code_entity subject_code_entity[]
+  guru_mapel_mapel    guru_mapel_mapel[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -221,6 +222,8 @@ model mapel {
   user_mapel_created_byTouser user?                   @relation("mapel_created_byTouser", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_315f0401d5993068a38c099ff63")
   user_mapel_updated_byTouser user?                   @relation("mapel_updated_byTouser", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b9aaaca0a676713ad4db60024d3")
   subject_code_entity         subject_code_entity[]
+  guru                        guru?                   @relation(fields: [guruId], references: [id])
+  guruId                      Int?
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
