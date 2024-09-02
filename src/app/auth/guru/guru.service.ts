@@ -46,36 +46,37 @@ export class GuruService {
       throw new HttpException('Some mapel not found', HttpStatus.NOT_FOUND);
     }
 
-    // Map to generate subject codes with mapelId and initial_schedule
-    
+    // Use a transaction to ensure all operations succeed
+    const [guru, subjectCodes] = await this.prisma.$transaction(
+      async (prisma) => {
+        // Create guru
+        const guru = await prisma.guru.create({
+          data: {
+            id: user.id,
+            initial_schedule,
+            user: { connect: { id: user.id } },
+            mapel: {
+              connect: mapelEntities.map((subject) => ({ id: subject.id })),
+            },
+          },
+        });
 
-    // Create and save guru with the user ID and subject codes
-    const guru = await this.prisma.guru.create({
-      data: {
-        id: user.id,
-        initial_schedule,
-        user: {
-          connect: user,
-        },
-        mapel: {
-          connect: mapelEntities,
-        },
+        // Create subject codes
+        const subjectCodes = await Promise.all(
+          mapelEntities.map((subject, index) =>
+            prisma.subject_code_entity.create({
+              data: {
+                code: `${initial_schedule}${index + 1}`,
+                guru: { connect: { id: guru.id } },
+                mapel: { connect: { id: subject.id } },
+              },
+            }),
+          ),
+        );
+
+        return [guru, subjectCodes];
       },
-    });
-
-    mapelEntities.map((subject, index) => {
-      return this.prisma.subject_code_entity.create({
-        data: {
-          code: `${initial_schedule}${index + 1}`,
-          guru: {
-            connect: guru
-          },
-          mapel: {
-            connect: subject
-          },
-        }
-      });
-    });
+    );
 
     return {
       status: 'Success',
