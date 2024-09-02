@@ -4,8 +4,7 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = "postgresql://postgres.fcvhhrzguywmeswewqek:prfVDcjEgBaP1lew@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
-  directUrl = "postgresql://postgres.fcvhhrzguywmeswewqek:prfVDcjEgBaP1lew@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"
+  url       = "postgresql://postgres.fcvhhrzguywmeswewqek:prfVDcjEgBaP1lew@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

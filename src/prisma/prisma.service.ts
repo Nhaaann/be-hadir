@@ -13,6 +13,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
         'postgresql://postgres.fcvhhrzguywmeswewqek:prfVDcjEgBaP1lew@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres',
       log: ['query', 'info', 'warn', 'error'],
       datasources: {
+        
         db: {
           url: 'postgresql://postgres.fcvhhrzguywmeswewqek:prfVDcjEgBaP1lew@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres',
         },
