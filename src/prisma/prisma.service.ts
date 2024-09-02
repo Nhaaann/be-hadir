@@ -8,7 +8,15 @@ export class PrismaService
 {
   constructor() {
     super({
+      transactionOptions: {
+        maxWait: 10000,
+      },
       log: ['query', 'info', 'warn', 'error'],
+      datasources: {
+        db: {
+          url: 'postgresql://postgres.fcvhhrzguywmeswewqek:prfVDcjEgBaP1lew@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres',
+        },
+      },
     });
   }
   async onModuleInit() {
@@ -19,3 +27,6 @@ export class PrismaService
     await this.$disconnect();
   }
 }
+const prisma = new PrismaClient({
+  log: ['query', 'info', 'warn', 'error'], // Log Prisma operations
+});
