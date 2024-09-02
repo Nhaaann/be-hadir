@@ -1,0 +1,334 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = "postgresql://postgres.fcvhhrzguywmeswewqek:prfVDcjEgBaP1lew@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+  directUrl = "postgresql://postgres.fcvhhrzguywmeswewqek:prfVDcjEgBaP1lew@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model absen_guru {
+  id                    Int               @id(map: "pk_absen_guru") @default(autoincrement())
+  waktu_absen           DateTime?         @db.Timestamp(6)
+  status                String            @default("Hadir") @db.VarChar
+  hasil_jurnal_kegiatan String?           @default("belum ada") @db.VarChar
+  created_at            DateTime          @default(now()) @db.Timestamp(6)
+  updated_at            DateTime          @default(now()) @db.Timestamp(6)
+  jamDetailJadwalId     Int
+  jamJadwalId           Int?
+  jadwalId              Int?
+  absenKelasId          Int?
+  guru_id               Int?
+  absen_kelas           absen_kelas?      @relation(fields: [absenKelasId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_17b171efab3a08a8d931fb8b578")
+  guru                  guru?             @relation(fields: [guru_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_2c71c754c39af7e12ece4ce86ca")
+  jadwal                jadwal?           @relation(fields: [jadwalId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_4519767abb6bd0321a57a506f86")
+  jam_jadwal            jam_jadwal?       @relation(fields: [jamJadwalId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_4dce9b42848bb5481a636acbb52")
+  jam_detail_jadwal     jam_detail_jadwal @relation(fields: [jamDetailJadwalId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_c26baa4936bd2394b9c15f230ad")
+  jurnal_kegiatan       jurnal_kegiatan[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model absen_kelas {
+  id                Int                @id(map: "pk_absen_kelas")
+  tanggal           DateTime           @db.Timestamp(6)
+  kode_kelas        String             @db.VarChar
+  kelasId           Int?
+  userId            Int?
+  guruId            Int?
+  jadwalId          Int?
+  jamJadwalId       Int?
+  jamDetailJadwalId Int?
+  absen_guru        absen_guru[]
+  user              user?              @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_0d611bceacc20c44331f3ea7309")
+  jadwal            jadwal?            @relation(fields: [jadwalId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2946023ad2d65b62f9f52724a2a")
+  jam_detail_jadwal jam_detail_jadwal? @relation(fields: [jamDetailJadwalId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_32cffc561339b8e16b91afd0307")
+  kelas             kelas?             @relation(fields: [kelasId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_8a74afda726a084512918715d5c")
+  jam_jadwal        jam_jadwal?        @relation(fields: [jamJadwalId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_91671c6fc7d2af03a2c0c783d00")
+  guru              guru?              @relation(fields: [guruId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b4c052cd6acd4f49d5510867f9d")
+  absen_siswa       absen_siswa[]
+  rekap_absen       rekap_absen[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model absen_siswa {
+  id                Int                @id(map: "pk_absen_siswa") @default(autoincrement())
+  status            String             @default("Hadir") @db.VarChar
+  waktu_absen       DateTime           @db.Timestamp(6)
+  userId            Int?
+  jamDetailJadwalId Int?
+  absenKelasId      Int?
+  jam_detail_jadwal jam_detail_jadwal? @relation(fields: [jamDetailJadwalId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_909e2d9f9d57ab7ed6e00b820d0")
+  absen_kelas       absen_kelas?       @relation(fields: [absenKelasId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_c57a7293745b85a961207b60730")
+  user              user?              @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_cd0c5b5852abad936639f5ffd36")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model geo_location {
+  id        Int      @id(map: "pk_geo_location")
+  latitude  Float
+  longitude Float
+  updatedAt DateTime @default(now()) @db.Timestamp(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model guru {
+  id                  Int                   @id(map: "pk_guru")
+  initial_schedule    String                @db.VarChar(1)
+  created_at          DateTime              @default(now()) @db.Timestamp(6)
+  updated_at          DateTime              @default(now()) @db.Timestamp(6)
+  is_absen_today      Boolean               @default(false)
+  userId              Int?
+  jadwal_detail_id    Int?
+  absen_guru          absen_guru[]
+  absen_kelas         absen_kelas[]
+  jam_detail_jadwal   jam_detail_jadwal?    @relation(fields: [jadwal_detail_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_08f6654efacdc7bec2119e0aaee")
+  user                user?                 @relation(fields: [userId], references: [id], onDelete: NoAction, map: "FK_ea4aeffc90a824f19811ee289e1")
+  guru_mapel_mapel    guru_mapel_mapel[]
+  rekap_absen         rekap_absen[]
+  subject_code_entity subject_code_entity[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model hari {
+  id        Int                 @id(map: "pk_hari") @default(autoincrement())
+  nama_hari hari_nama_hari_enum
+  jadwal    jadwal[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model jadwal {
+  id                           Int           @id(map: "pk_jadwal") @default(autoincrement())
+  created_at                   DateTime      @default(now()) @db.Timestamp(6)
+  updated_at                   DateTime      @default(now()) @db.Timestamp(6)
+  hariId                       Int?
+  created_by                   Int?
+  updated_by                   Int?
+  absen_guru                   absen_guru[]
+  absen_kelas                  absen_kelas[]
+  user_jadwal_updated_byTouser user?         @relation("jadwal_updated_byTouser", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_0cb04461c26bb8bb3358d349591")
+  hari                         hari?         @relation(fields: [hariId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_2a161ad125e5af793271c8240c5")
+  user_jadwal_created_byTouser user?         @relation("jadwal_created_byTouser", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_61eebee6e0aec3032fa7db5b29d")
+  jam_jadwal                   jam_jadwal[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model jam_detail_jadwal {
+  id                  Int                  @id(map: "pk_jam_detail_jadwal") @default(autoincrement())
+  jamJadwalId         Int?
+  subjectCodeId       Int?
+  kelasId             Int?
+  absen_guru          absen_guru[]
+  absen_kelas         absen_kelas[]
+  absen_siswa         absen_siswa[]
+  guru                guru[]
+  kelas               kelas?               @relation(fields: [kelasId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_78533f50016836727ed01ab54c4")
+  subject_code_entity subject_code_entity? @relation(fields: [subjectCodeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_822d1602b8a995304fd8993fef5")
+  jam_jadwal          jam_jadwal?          @relation(fields: [jamJadwalId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_dda060fcbefae7b360106138e2f")
+  jurnal_kegiatan     jurnal_kegiatan[]
+  rekap_absen         rekap_absen[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model jam_jadwal {
+  id                Int                 @id(map: "pk_jam_jadwal") @default(autoincrement())
+  is_rest           Boolean?            @default(false)
+  jam_mulai         String              @db.VarChar
+  allSchedulesDone  Boolean             @default(false)
+  jam_selesai       String              @db.VarChar
+  created_at        DateTime            @default(now()) @db.Timestamp(6)
+  updated_at        DateTime            @default(now()) @db.Timestamp(6)
+  jadwal_id         Int?
+  absen_guru        absen_guru[]
+  absen_kelas       absen_kelas[]
+  jam_detail_jadwal jam_detail_jadwal[]
+  jadwal            jadwal?             @relation(fields: [jadwal_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_93466a11612940194f7d52a2e5f")
+  jurnal_kegiatan   jurnal_kegiatan[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model kelas {
+  id                          Int                 @id(map: "pk_kelas") @default(autoincrement())
+  nama_kelas                  String              @db.VarChar
+  created_at                  DateTime            @default(now()) @db.Timestamp(6)
+  updated_at                  DateTime            @default(now()) @db.Timestamp(6)
+  created_by                  Int?
+  updated_by                  Int?
+  absen_kelas                 absen_kelas[]
+  jam_detail_jadwal           jam_detail_jadwal[]
+  user_kelas_created_byTouser user?               @relation("kelas_created_byTouser", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_30ac19ced238e39a22cbc28e15a")
+  user_kelas_updated_byTouser user?               @relation("kelas_updated_byTouser", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_cdb4c92038bc48a311e2e9c31ab")
+  murid                       murid[]
+  user_user_kelasIdTokelas    user[]              @relation("user_kelasIdTokelas")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model jurnal_kegiatan {
+  id                Int               @id(map: "pk_jurnal_kegiatan") @default(autoincrement())
+  matapelajaran     String            @default("") @db.VarChar(255)
+  jam_pelajaran     String            @default("") @db.VarChar(255)
+  materi            String
+  kendala           String?
+  jamJadwalId       Int
+  jamDetailJadwalId Int
+  absenGuruId       Int
+  jam_detail_jadwal jam_detail_jadwal @relation(fields: [jamDetailJadwalId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_04459e5df1bc17f0710d3051357")
+  absen_guru        absen_guru        @relation(fields: [absenGuruId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_7508fcdbd828c572467d2f82a76")
+  jam_jadwal        jam_jadwal        @relation(fields: [jamJadwalId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d3355fc4a2f2b6281ab5bde2c65")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model rekap_absen {
+  id                   Int                @id(map: "pk_rekap_absen") @default(autoincrement())
+  type                 String             @db.VarChar
+  tanggal              DateTime           @db.Date
+  status               String             @default("Hadir") @db.VarChar
+  totalAbsensi         Int
+  totalLembur          Int
+  siswa_id             Int?
+  guru_id              Int?
+  jam_detail_jadwal_id Int?
+  absen_kelas_id       Int?
+  absen_kelas          absen_kelas?       @relation(fields: [absen_kelas_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1887ce61ce4b1c35ee8ff81d02f")
+  murid                murid?             @relation(fields: [siswa_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_8a1283b175a8451c5527001771e")
+  guru                 guru?              @relation(fields: [guru_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_90d11a005f97e473a0cb49b8b97")
+  jam_detail_jadwal    jam_detail_jadwal? @relation(fields: [jam_detail_jadwal_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_91cb5beaef947bc69f7933ea4c6")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model subject_code_entity {
+  id                Int                 @id(map: "pk_subject_code_entity") @default(autoincrement())
+  code              String              @db.VarChar
+  created_at        DateTime            @default(now()) @db.Timestamp(6)
+  updated_at        DateTime            @default(now()) @db.Timestamp(6)
+  guru_id           Int?
+  mapel_id          Int?
+  jam_detail_jadwal jam_detail_jadwal[]
+  guru              guru?               @relation(fields: [guru_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_70534ebc48919de5cd8ae6143f0")
+  mapel             mapel?              @relation(fields: [mapel_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fa78c211ad7580a03543a152b6b")
+}
+
+model mapel {
+  id                          Int                     @id(map: "pk_mapel") @default(autoincrement())
+  nama_mapel                  String                  @db.VarChar(50)
+  status_mapel                mapel_status_mapel_enum @default(online)
+  created_at                  DateTime                @default(now()) @db.Timestamp(6)
+  updated_at                  DateTime                @default(now()) @db.Timestamp(6)
+  created_by                  Int?
+  updated_by                  Int?
+  guru_mapel_mapel            guru_mapel_mapel[]
+  user_mapel_created_byTouser user?                   @relation("mapel_created_byTouser", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_315f0401d5993068a38c099ff63")
+  user_mapel_updated_byTouser user?                   @relation("mapel_updated_byTouser", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b9aaaca0a676713ad4db60024d3")
+  subject_code_entity         subject_code_entity[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user {
+  id                           Int              @id(map: "pk_user") @default(autoincrement())
+  avatar                       String?          @db.VarChar
+  nama                         String           @db.VarChar
+  nomor_hp                     String?          @db.VarChar
+  email                        String           @unique(map: "UQ_e12875dfb3b1d92d7d7c5377e22") @db.VarChar
+  password                     String?          @db.VarChar
+  refresh_token                String?          @db.VarChar
+  role                         user_role_enum
+  created_at                   DateTime         @default(now()) @db.Timestamp(6)
+  updated_at                   DateTime         @default(now()) @db.Timestamp(6)
+  kelasId                      Int?
+  absen_kelas                  absen_kelas[]
+  absen_siswa                  absen_siswa[]
+  guru                         guru[]
+  user_jadwal_updated_byTouser jadwal[]         @relation("jadwal_updated_byTouser")
+  user_jadwal_created_byTouser jadwal[]         @relation("jadwal_created_byTouser")
+  kelas_kelas_created_byTouser kelas[]          @relation("kelas_created_byTouser")
+  kelas_kelas_updated_byTouser kelas[]          @relation("kelas_updated_byTouser")
+  mapel_mapel_created_byTouser mapel[]          @relation("mapel_created_byTouser")
+  mapel_mapel_updated_byTouser mapel[]          @relation("mapel_updated_byTouser")
+  murid                        murid?
+  notifikasi                   notifikasi[]
+  reset_password               reset_password[]
+  staf                         staf[]
+  kelas_user_kelasIdTokelas    kelas?           @relation("user_kelasIdTokelas", fields: [kelasId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1bdb8d8cdba56955287d278a4f9")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model guru_mapel_mapel {
+  guruId  Int
+  mapelId Int
+  guru    guru  @relation(fields: [guruId], references: [id], onDelete: Cascade, map: "FK_c305edb353ed0706b820a883f65")
+  mapel   mapel @relation(fields: [mapelId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d95d4e976fcb0282f46efd073c0")
+
+  @@id([guruId, mapelId], map: "pk_guru_mapel")
+  @@index([guruId], map: "IDX_c305edb353ed0706b820a883f6")
+  @@index([mapelId], map: "IDX_d95d4e976fcb0282f46efd073c")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model murid {
+  id                 Int           @id(map: "pk_murid")
+  jamDetailJadwal_id Int?
+  NISN               String        @db.VarChar
+  tanggal_lahir      String        @db.VarChar
+  alamat             String        @db.VarChar
+  created_at         DateTime      @default(now()) @db.Timestamp(6)
+  updated_at         DateTime      @default(now()) @db.Timestamp(6)
+  is_absen_today     Boolean       @default(false)
+  kelasId            Int?
+  kelas              kelas?        @relation(fields: [kelasId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_061b19da22a87d6faf336b5e631")
+  user               user          @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_defc696fd2c66dffa636c8197bd")
+  rekap_absen        rekap_absen[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model notifikasi {
+  id        String   @id(map: "pk_notifkasi") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  message   String   @default("") @db.VarChar
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  userId    Int?
+  user      user?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_947abc6aabf4d25e4eac89ab0b2")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model reset_password {
+  id         Int      @id(map: "pk_reset_password") @default(autoincrement())
+  token      String?  @db.VarChar
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @default(now()) @db.Timestamp(6)
+  user_id    Int?
+  user       user?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_de65040d842349a5e6428ff21e6")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model staf {
+  id              Int      @id(map: "pk_staf") @default(autoincrement())
+  jurnal_kegiatan String?  @db.VarChar
+  created_at      DateTime @default(now()) @db.Timestamp(6)
+  updated_at      DateTime @default(now()) @db.Timestamp(6)
+  userId          Int?
+  user            user?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_7e131111b7e37193cbdd8b98251")
+}
+
+enum hari_nama_hari_enum {
+  Senin
+  Selasa
+  Rabu
+  Kamis
+  Jumat
+  Sabtu
+  Minggu
+}
+
+enum mapel_status_mapel_enum {
+  online
+  offline
+}
+
+enum user_role_enum {
+  Admin
+  Guru
+  Murid
+  Staf
+  Kepala_Sekolah @map("Kepala Sekolah")
+  Wali_Kelas     @map("Wali Kelas")
+}
