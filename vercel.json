@@ -9,7 +9,7 @@
   "crons": [
     {
       "path": "/api/cron.ts",
-      "schedule": "* * * * *"
+      "schedule": "*/10 * * * *" 
     }
   ],
   "routes": [
