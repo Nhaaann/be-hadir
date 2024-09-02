@@ -228,20 +228,34 @@ export class JadwalService {
 
   async create(createJadwalDto: CreateJadwalDto): Promise<any> {
     const { hari_id, jam_jadwal } = createJadwalDto;
-  
+    // Check if Hari and User records exist
+    const hari = await this.prisma.hari.findUnique({
+      where: { id: hari_id },
+    });
+    if (!hari) {
+      throw new HttpException('Hari not found', HttpStatus.NOT_FOUND);
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: this.req.user.id },
+    });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
     // Check if Jadwal for the given day already exists
     const existingJadwal = await this.prisma.jadwal.findFirst({
       where: { hariId: hari_id },
       include: { hari: true },
     });
-  
+
     if (existingJadwal) {
       throw new HttpException(
         `Jadwal for ${existingJadwal.hari.nama_hari} already exists`,
         HttpStatus.FOUND,
       );
     }
-  
+
     // Create the main Jadwal entity
     const jadwal = await this.prisma.jadwal.create({
       data: {
@@ -249,7 +263,7 @@ export class JadwalService {
         created_by: this.req.user.id,
       },
     });
-  
+
     // Loop through each JamJadwal DTO to create related entities
     let lastSavedJamJadwal: any;
     for (const jamJadwalDto of jam_jadwal) {
@@ -259,12 +273,12 @@ export class JadwalService {
           jam_mulai: jamJadwalDto.jam_mulai,
           jam_selesai: jamJadwalDto.jam_selesai,
           is_rest: jamJadwalDto.is_rest,
-          jadwal_id: jadwal.id,  // Note the correct field name in Prisma
+          jadwal_id: jadwal.id, // Note the correct field name in Prisma
         },
       });
-  
+
       lastSavedJamJadwal = jamJadwal;
-  
+
       // Loop through each JamDetailJadwal DTO to create related entities
       for (const jdDto of jamJadwalDto.jam_detail) {
         // Find the related Kelas and SubjectCode entities
@@ -274,7 +288,7 @@ export class JadwalService {
         const subject_code = await this.prisma.subject_code_entity.findUnique({
           where: { id: jdDto.subject_code },
         });
-  
+
         // Check if Kelas and SubjectCode entities are found
         if (!kelas || !subject_code) {
           throw new HttpException(
@@ -282,18 +296,18 @@ export class JadwalService {
             HttpStatus.NOT_FOUND,
           );
         }
-  
+
         // Create the JamDetailJadwal entity
         await this.prisma.jam_detail_jadwal.create({
           data: {
-            jamJadwalId: lastSavedJamJadwal.id,  // Note the correct field name in Prisma
+            jamJadwalId: lastSavedJamJadwal.id, // Note the correct field name in Prisma
             kelasId: kelas.id,
             subjectCodeId: subject_code.id,
           },
         });
       }
     }
-  
+
     // Set the last JamJadwal's allSchedulesDone to true
     if (lastSavedJamJadwal) {
       await this.prisma.jam_jadwal.update({
@@ -301,15 +315,13 @@ export class JadwalService {
         data: { allSchedulesDone: true },
       });
     }
-  
+
     return {
       status: 'Success',
       message: 'Jadwal created successfully',
       data: jadwal,
     };
   }
-  
-  
 
   async update(id: number, updateJadwalDto: UpdateJadwalDto): Promise<any> {
     // Find the existing Jadwal entity
