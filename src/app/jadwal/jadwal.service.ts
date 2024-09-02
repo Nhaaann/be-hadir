@@ -242,15 +242,6 @@ export class JadwalService {
       );
     }
   
-    // Validate hariId
-    const hari = await this.prisma.hari.findUnique({
-      where: { id: hari_id },
-    });
-  
-    if (!hari) {
-      throw new HttpException('Hari not found', HttpStatus.NOT_FOUND);
-    }
-  
     // Create the main Jadwal entity
     const jadwal = await this.prisma.jadwal.create({
       data: {
@@ -268,7 +259,7 @@ export class JadwalService {
           jam_mulai: jamJadwalDto.jam_mulai,
           jam_selesai: jamJadwalDto.jam_selesai,
           is_rest: jamJadwalDto.is_rest,
-          jadwal_id: jadwal.id,
+          jadwal_id: jadwal.id,  // Note the correct field name in Prisma
         },
       });
   
@@ -276,28 +267,28 @@ export class JadwalService {
   
       // Loop through each JamDetailJadwal DTO to create related entities
       for (const jdDto of jamJadwalDto.jam_detail) {
-        // Validate Kelas
+        // Find the related Kelas and SubjectCode entities
         const kelas = await this.prisma.kelas.findUnique({
           where: { id: jdDto.kelas },
         });
-        if (!kelas) {
-          throw new HttpException('Kelas not found', HttpStatus.NOT_FOUND);
-        }
-  
-        // Validate Subject Code
-        const subjectCode = await this.prisma.subject_code_entity.findUnique({
+        const subject_code = await this.prisma.subject_code_entity.findUnique({
           where: { id: jdDto.subject_code },
         });
-        if (!subjectCode) {
-          throw new HttpException('Subject Code not found', HttpStatus.NOT_FOUND);
+  
+        // Check if Kelas and SubjectCode entities are found
+        if (!kelas || !subject_code) {
+          throw new HttpException(
+            'Kelas or Subject Code not found',
+            HttpStatus.NOT_FOUND,
+          );
         }
   
         // Create the JamDetailJadwal entity
         await this.prisma.jam_detail_jadwal.create({
           data: {
-            jamJadwalId: lastSavedJamJadwal.id,
+            jamJadwalId: lastSavedJamJadwal.id,  // Note the correct field name in Prisma
             kelasId: kelas.id,
-            subjectCodeId: subjectCode.id,
+            subjectCodeId: subject_code.id,
           },
         });
       }
@@ -313,10 +304,11 @@ export class JadwalService {
   
     return {
       status: 'Success',
-      message: 'OKe',
+      message: 'Jadwal created successfully',
       data: jadwal,
     };
   }
+  
   
 
   async update(id: number, updateJadwalDto: UpdateJadwalDto): Promise<any> {
