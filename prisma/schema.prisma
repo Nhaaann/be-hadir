@@ -92,8 +92,8 @@ model guru {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model hari {
-  id        Int                 @id(map: "pk_hari") @default(autoincrement())
-  nama_hari hari_nama_hari_enum
+  id        Int      @id(map: "pk_hari") @default(autoincrement())
+  nama_hari String   @db.VarChar(255)
   jadwal    jadwal[]
 }
 
@@ -307,16 +307,6 @@ model staf {
   updated_at      DateTime @default(now()) @db.Timestamp(6)
   userId          Int?
   user            user?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_7e131111b7e37193cbdd8b98251")
-}
-
-enum hari_nama_hari_enum {
-  Senin
-  Selasa
-  Rabu
-  Kamis
-  Jumat
-  Sabtu
-  Minggu
 }
 
 enum mapel_status_mapel_enum {
