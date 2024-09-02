@@ -25,6 +25,8 @@ export class JadwalService {
 
   async getCurrentJamDetailUser(): Promise<any> {
     const todayDayName = getTodayDayNames();
+    
+    // Retrieve today's schedules with required relations
     const jadwalList = await this.prisma.jadwal.findMany({
       where: {
         hari: {
@@ -50,18 +52,19 @@ export class JadwalService {
         },
       },
     });
-
+  
     const user = await this.prisma.user.findUnique({
       where: { id: this.req.user.id },
     });
-
+  
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
-
+  
     const currentTime = new Date();
     const currentDate = currentTime.toISOString().split('T')[0];
-
+  
+    // Filter and sort schedules for today
     const todaysSchedules = jadwalList
       .flatMap((jadwal) =>
         jadwal.jam_jadwal.map((jamJadwal) => ({
@@ -72,25 +75,23 @@ export class JadwalService {
         })),
       )
       .filter((item) => item.jamDetail);
-
+  
     todaysSchedules.sort((a, b) => {
       const jamMulaiA = new Date(`${currentDate}T${a.jamJadwal.jam_mulai}`);
       const jamMulaiB = new Date(`${currentDate}T${b.jamJadwal.jam_mulai}`);
       return jamMulaiA.getTime() - jamMulaiB.getTime();
     });
-
+  
+    // Check if all schedules are done
     const allSchedulesDone = todaysSchedules.every(
-      (schedule) => schedule.jamJadwal.allSchedulesDone,
+      (schedule) => currentTime >= new Date(`${currentDate}T${schedule.jamJadwal.jam_selesai}`)
     );
-
+  
+    // Iterate through today's schedules to find the current or next schedule
     for (const schedule of todaysSchedules) {
-      const jamMulai = new Date(
-        `${currentDate}T${schedule.jamJadwal.jam_mulai}`,
-      );
-      const jamSelesai = new Date(
-        `${currentDate}T${schedule.jamJadwal.jam_selesai}`,
-      );
-
+      const jamMulai = new Date(`${currentDate}T${schedule.jamJadwal.jam_mulai}`);
+      const jamSelesai = new Date(`${currentDate}T${schedule.jamJadwal.jam_selesai}`);
+  
       if (currentTime >= jamMulai && currentTime <= jamSelesai) {
         const absenSiswa = await this.prisma.absen_siswa.findFirst({
           where: {
@@ -102,13 +103,13 @@ export class JadwalService {
             },
           },
         });
-
+  
         const isAbsen = !!absenSiswa;
         const isMasukKelas = !!absenSiswa;
-        const isMulai = !allSchedulesDone && currentTime >= jamMulai;
+        
         return {
           status: 'Success',
-          message: 'OKe',
+          message: 'Schedule found successfully',
           data: {
             id_user: user.id,
             nama_user: user.nama,
@@ -127,21 +128,20 @@ export class JadwalService {
         };
       }
     }
-
+  
+    // Handle the case where no current schedule is active
     if (todaysSchedules.length > 0) {
       const nextSchedule = todaysSchedules[0];
       const isJadwalHabis =
         allSchedulesDone ||
-        currentTime >=
-          new Date(`${currentDate}T${nextSchedule.jamJadwal.jam_selesai}`);
+        currentTime >= new Date(`${currentDate}T${nextSchedule.jamJadwal.jam_selesai}`);
       const isMulai =
         !isJadwalHabis &&
-        currentTime >=
-          new Date(`${currentDate}T${nextSchedule.jamJadwal.jam_mulai}`);
-
+        currentTime >= new Date(`${currentDate}T${nextSchedule.jamJadwal.jam_mulai}`);
+  
       return {
         status: 'Success',
-        message: 'OKe',
+        message: 'Next schedule found',
         data: {
           id_user: user.id,
           nama_user: user.nama,
@@ -159,12 +159,14 @@ export class JadwalService {
         },
       };
     }
-
+  
+    // If no schedules are found for today
     throw new HttpException(
       'Jam detail not found for today',
       HttpStatus.NOT_FOUND,
     );
   }
+  
 
   async findOne(id: number): Promise<any> {
     // Cari jadwal dengan menggunakan Prisma dan melakukan eager loading pada relasi yang dibutuhkan
