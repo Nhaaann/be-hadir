@@ -15,12 +15,12 @@ import { JwtGuard } from 'src/app/auth/auth.guard';
 export class AbsenSiswaController {
   constructor(private readonly absenSiswaService: AbsenSiswaService) {}
 
-  // @Get('/')
-  // async getRekapSiswa(
-  //   @Query('bulan') month: string,
-  //   @Query('minggu') minggu: number,
-  //   @Query('mapel') mapel: string,
-  // ): Promise<any> {
-  //   return this.absenSiswaService.getRekapSiswa(month, minggu, mapel);
-  // }
+  @Get('/')
+  async getRekapSiswa(
+    @Query('bulan') month: string,
+    @Query('minggu') minggu: number,
+    @Query('mapel') mapel: string,
+  ): Promise<any> {
+    return this.absenSiswaService.getRekapSiswa(month, minggu, mapel);
+  }
 }

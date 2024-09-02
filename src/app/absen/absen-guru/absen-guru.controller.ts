@@ -9,12 +9,12 @@ import { AbsenGuruService } from '../absen-guru.service';
 export class AbsenGuruController {
   constructor(private readonly absenGuruService: AbsenGuruService) {}
 
-  // @Get('/')
-  // async getWeeklySummary(
-  //   @Query('bulan') month: string,
-  //   @Query('minggu') minggu: number,
-  //   @Query('mapel') mapel: string,
-  // ): Promise<any> {
-  //   return this.absenGuruService.getRekapGuru(month, minggu, mapel);
-  // }
+  @Get('/')
+  async getWeeklySummary(
+    @Query('bulan') month: string,
+    @Query('minggu') minggu: number,
+    @Query('mapel') mapel: string,
+  ): Promise<any> {
+    return this.absenGuruService.getRekapGuru(month, minggu, mapel);
+  }
 }

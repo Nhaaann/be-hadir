@@ -18,7 +18,7 @@ import {
 } from './absen.dto';
 // import { Jadwal } from '../jadwal/jadwal.entity';
 
-// import { ResponseSuccess } from 'src/utils/interface/respone'; 
+// import { ResponseSuccess } from 'src/utils/interface/respone';
 // import { REQUEST } from '@nestjs/core';
 // import { User } from '../auth/auth.entity';
 // import { Role } from '../auth/roles.enum';
@@ -34,382 +34,355 @@ import {
 // import { SubjectCodeEntity } from '../subject_code/subject_code.entity';
 import { AbsenGateway } from './absen.gateway';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { REQUEST } from '@nestjs/core';
 
 @Injectable()
-export class AbsenService{
+export class AbsenService {
   constructor(
-    // @InjectRepository(AbsenGuru)
-    // private readonly absenRepository: Repository<AbsenGuru>,
-    // @InjectRepository(Jadwal)
-    // private readonly jadwalRepository: Repository<Jadwal>,
-    // @InjectRepository(User) // Inject User repository
-    // private readonly userRepository: Repository<User>,
-    // @InjectRepository(Guru) // Inject Guru repository
-    // private readonly guruRepository: Repository<Guru>,
-    // @Inject(REQUEST) private req: any,
-    // private readonly absenGateway: AbsenGateway,
-    // @InjectRepository(JamJadwal)
-    // private readonly jamJadwalRepository: Repository<JamJadwal>,
-    // @InjectRepository(JurnalKegiatan)
-    // private readonly jurnalKegiatanRepository: Repository<JurnalKegiatan>,
-    // @InjectRepository(JamDetailJadwal)
-    // private readonly jamDetailJadwalRepository: Repository<JamDetailJadwal>,
-    // @InjectRepository(Kelas)
-    // private readonly kelasRepository: Repository<Kelas>,
-    // @InjectRepository(AbsenSiswa)
-    // private readonly absenSiswaRepository: Repository<AbsenSiswa>,
-    // @InjectRepository(AbsenGuru)
-    // private readonly absenGuruRepository: Repository<AbsenGuru>,
-    // @InjectRepository(SubjectCodeEntity)
-    // private readonly subjectCodeRepository: Repository<SubjectCodeEntity>,
-    // @InjectRepository(AbsenKelas)
-    // private readonly absenKelasRepository: Repository<AbsenKelas>,
-    // @InjectRepository(Murid)
-    // private readonly siswaRepository: Repository<Murid>,
-  ) {
-    
+    private readonly prisma: PrismaService,
+    @Inject(REQUEST) private req: any,
+  ) {}
+
+  async enterClassGuru(
+    createEnterClassGuruDto: CreateEnterClassGuruDto,
+  ): Promise<any> {
+    const { jam_detail } = createEnterClassGuruDto;
+
+    // Find teacher data
+    const guru = await this.prisma.guru.findUnique({
+      where: { id: this.req.user.id },
+      include: { jam_detail_jadwal: true },
+    });
+
+    // Check for existing entry
+    const existingEntry = await this.prisma.absen_kelas.findUnique({
+      where: { id: jam_detail },
+    });
+
+    if (existingEntry) {
+      throw new HttpException('Guru sudah masuk kelas', HttpStatus.CONFLICT);
+    }
+
+    // Fetch schedule detail
+    const jamDetailJadwal = await this.prisma.jam_detail_jadwal.findUnique({
+      where: { id: jam_detail },
+      include: { jam_jadwal: true, kelas: true },
+    });
+
+    if (!guru || !jamDetailJadwal) {
+      throw new HttpException(
+        'User or Jam Detail Jadwal not found',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const kodeKelas = this.generateClassCode();
+    const absenKelas = await this.prisma.absen_kelas.create({
+      data: {
+        id: jam_detail,
+        kelasId: jamDetailJadwal.kelas.id,
+        guruId: guru.id,
+        jamDetailJadwalId: jamDetailJadwal.id,
+        jamJadwalId: jamDetailJadwal.jam_jadwal.id,
+        tanggal: new Date(),
+        kode_kelas: kodeKelas,
+      },
+    });
+
+    return {
+      status: 'Success',
+      message: 'OKe',
+      data: absenKelas,
+    };
   }
 
-  // async enterClassGuru(
-  //   createEnterClassGuruDto: CreateEnterClassGuruDto,
-  // ): Promise<any> {
-  //   const { jam_detail } = createEnterClassGuruDto;
+  async keluarKelasGuru(
+    createJurnalKegiatanDto: CreateJurnalKegiatanDto,
+    jam_detail_id: number,
+  ): Promise<any> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: this.req.user.id },
+      include: { guru: true },
+    });
 
-  //   const guru = await this.guruRepository.findOne({
-  //     where: { id: this.req.user.id },
-  //     relations: ['jadwal_detail'], // pastikan ini dimasukkan
-  //   });
-  //   const existingEntry = await this.absenKelasRepository.findOne({
-  //     where: {
-  //       id: jam_detail,
-  //     },
-  //   });
+    const jamDetailJadwal = await this.prisma.jam_detail_jadwal.findUnique({
+      where: { id: jam_detail_id },
+      include: {
+        jam_jadwal: true,
+        subject_code_entity: { include: { mapel: true } },
+        kelas: true,
+      },
+    });
 
-  //   if (existingEntry) {
-  //     throw new HttpException('Guru sudah masuk kelas', HttpStatus.CONFLICT);
-  //   }
+    if (!user || !jamDetailJadwal) {
+      throw new HttpException(
+        'User or Jam Detail Jadwal not found',
+        HttpStatus.NOT_FOUND,
+      );
+    }
 
-  //   const jamDetailJadwal = await this.jamDetailJadwalRepository.findOne({
-  //     where: { id: jam_detail },
-  //     relations: ['jamJadwal', 'kelas'],
-  //   });
+    if (user.guru) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          guru: {
+            update: {
+              where: { id: user.id },
+              data: { jadwal_detail_id: null },
+            },
+          },
+        },
+      });
+    } else {
+      throw new HttpException('Guru not found for user', HttpStatus.NOT_FOUND);
+    }
 
-  //   if (!guru || !jamDetailJadwal) {
-  //     throw new HttpException(
-  //       'User or Jam Detail Jadwal not found',
-  //       HttpStatus.NOT_FOUND,
-  //     );
-  //   }
+    const absenGuru = await this.prisma.absen_guru.findFirst({
+      where: { guru_id: this.req.user.id },
+      include: { guru: { include: { user: true } } },
+    });
 
-  //   const kodeKelas = this.generateClassCode();
-  //   const absenKelas = new AbsenKelas();
-  //   absenKelas.id = jam_detail; // Set ID to match jam_detail
-  //   absenKelas.kelas = jamDetailJadwal.kelas;
-  //   absenKelas.guru = guru;
-  //   absenKelas.jamDetailJadwal = jamDetailJadwal;
-  //   absenKelas.jamJadwal = jamDetailJadwal.jamJadwal;
-  //   absenKelas.tanggal = new Date();
-  //   absenKelas.kode_kelas = kodeKelas;
+    const jurnalKegiatan = await this.prisma.jurnal_kegiatan.create({
+      data: {
+        jamJadwalId: jamDetailJadwal.jam_jadwal.id,
+        absenGuruId: absenGuru.id,
+        jamDetailJadwalId: jamDetailJadwal.id,
+        matapelajaran: jamDetailJadwal.subject_code_entity.mapel.nama_mapel,
+        materi: createJurnalKegiatanDto.materi,
+        kendala: createJurnalKegiatanDto.kendala,
+      },
+    });
 
-  //   await this.absenKelasRepository.save(absenKelas);
+    const absenKelas = await this.prisma.absen_kelas.findFirst({
+      where: { jamDetailJadwalId: jamDetailJadwal.id },
+      include: { absen_siswa: true },
+    });
 
-  //   return {
-  //     status: 'Success',
-  //     message: 'OKe',
-  //     data: absenKelas
-  //   };
-  // }
+    if (!absenKelas) {
+      throw new NotFoundException('Absen Kelas not found');
+    }
 
-  // async keluarKelasGuru(
-  //   createJurnalKegiatanDto: CreateJurnalKegiatanDto,
-  //   jam_detail_id: number,
-  // ): Promise<any> {
-  //   const user = await this.userRepository.findOne({
-  //     where: { id: this.req.user.id },
-  //     relations: ['guru'], // Ensure guru relation is loaded
-  //   });
+    await this.prisma.absen_siswa.updateMany({
+      where: { absenKelasId: absenKelas.id },
+      data: { absenKelasId: null },
+    });
 
-  //   const jamDetailJadwal = await this.jamDetailJadwalRepository.findOne({
-  //     where: { id: jam_detail_id },
-  //     relations: ['jamJadwal', 'subject_code.mapel', 'kelas'],
-  //   });
+    await this.prisma.absen_kelas.delete({
+      where: { id: absenKelas.id },
+    });
 
-  //   if (!user || !jamDetailJadwal) {
-  //     throw new HttpException(
-  //       'User or Jam Detail Jadwal not found',
-  //       HttpStatus.NOT_FOUND,
-  //     );
-  //   }
+    const students = await this.prisma.murid.findMany({
+      where: { kelasId: jamDetailJadwal.kelas.id },
+    });
 
-  //   // Check if user.guru exists
-  //   if (user.guru) {
-  //     user.guru.jadwal_detail = null;
-  //     await this.userRepository.save(user);
-  //   } else {
-  //     throw new HttpException('Guru not found for user', HttpStatus.NOT_FOUND);
-  //   }
+    for (const student of students) {
+      await this.prisma.murid.update({
+        where: { id: student.id },
+        data: { jamDetailJadwal_id: null },
+      });
+    }
 
-  //   const absenGuru = await this.absenGuruRepository.findOne({
-  //     relations: ['guru.user'],
-  //     where: {
-  //       guru: {
-  //         id: this.req.user.id,
-  //       },
-  //     },
-  //   });
+    return {
+      status: 'Success',
+      message: 'OKe',
+      data: jurnalKegiatan,
+    };
+  }
 
-  //   // Create Journal Entry
-  //   const jurnalKegiatan = new JurnalKegiatan();
-  //   jurnalKegiatan.jamJadwal = jamDetailJadwal.jamJadwal;
-  //   jurnalKegiatan.absen_guru = absenGuru;
-  //   jurnalKegiatan.jamDetailJadwal = jamDetailJadwal;
-  //   jurnalKegiatan.matapelajaran =
-  //     jamDetailJadwal.subject_code.mapel.nama_mapel;
-  //   jurnalKegiatan.materi = createJurnalKegiatanDto.materi;
-  //   jurnalKegiatan.kendala = createJurnalKegiatanDto.kendala;
+  async getAbsenKelasDetail(id: number): Promise<any> {
+    const absenKelas = await this.prisma.absen_kelas.findUnique({
+      where: { id },
+      include: {
+        kelas: {
+          include: {
+            murid: true,
+          },
+        },
+        jam_jadwal: true,
+        jam_detail_jadwal: {
+          include: {
+            subject_code_entity: {
+              include: {
+                mapel: true,
+              },
+            },
+          },
+        },
+        absen_siswa: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
 
-  //   await this.jurnalKegiatanRepository.save(jurnalKegiatan);
+    if (!absenKelas) {
+      throw new HttpException('Absen Kelas not found', HttpStatus.NOT_FOUND);
+    }
 
-  //   // Find Absen Kelas
-  //   const absenKelas = await this.absenKelasRepository.findOne({
-  //     where: {
-  //       jamDetailJadwal: {
-  //         id: jamDetailJadwal.id,
-  //       },
-  //     },
-  //     relations: ['absenSiswa'],
-  //   });
+    const formattedDate = new Date().toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
 
-  //   if (!absenKelas) {
-  //     throw new NotFoundException('Absen Kelas not found');
-  //   }
+    const totalSiswa = absenKelas.kelas.murid.length;
+    const jumlahHadir = absenKelas.absen_siswa.filter(
+      (siswa) => siswa.status === 'Hadir',
+    ).length;
+    const jumlahTelat = absenKelas.absen_siswa.filter(
+      (siswa) => siswa.status === 'Telat',
+    ).length;
+    const jumlahAlpha = absenKelas.absen_siswa.filter(
+      (siswa) => siswa.status === 'Alpha',
+    ).length;
 
-  //   // Update Absen Siswa to set id_kelas_absen to NULL
-  //   await this.absenSiswaRepository.update(
-  //     { absenKelas: { id: absenKelas.id } },
-  //     { absenKelas: null },
-  //   );
+    const data = {
+      id: absenKelas.id,
+      kode_kelas: absenKelas.kode_kelas,
+      nama_kelas: absenKelas.kelas.nama_kelas,
+      nama_mapel: absenKelas.jam_detail_jadwal.subject_code_entity.mapel.nama_mapel,
+      jam_mulai: absenKelas.jam_jadwal.jam_mulai,
+      jam_selesai: absenKelas.jam_jadwal.jam_selesai,
+      subject_code: absenKelas.jam_detail_jadwal.subject_code_entity.code,
+      jumlah_siswa: totalSiswa,
+      jumlah_hadir: jumlahHadir,
+      jumlah_telat: jumlahTelat,
+      jumlah_alpha: jumlahAlpha,
+      daftar_siswa: absenKelas.absen_siswa.map((siswa) => ({
+        id: siswa.user.id,
+        nama: siswa.user.nama,
+        status: siswa.status,
+        tanggal: formattedDate,
+        waktu_masuk: new Date(siswa.waktu_absen).toLocaleDateString('en-GB', {
+          minute: '2-digit',
+          hour: '2-digit',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        }),
+        waktu_keluar: null,
+      })),
+    };
 
-  //   // Delete Absen Kelas
-  //   await this.absenKelasRepository.remove(absenKelas);
+    return {
+      status: 'Success',
+      message: 'OKe',
+      data: data,
+    };
+  }
+  async deleteAbsenKelas(id: number): Promise<any> {
+    const cek = await this.prisma.absen_kelas.findUnique({
+      where: { id },
+    });
 
-  //   // Reset jamDetailJadwal_id for students to null
-  //   const students = await this.siswaRepository.find({
-  //     where: { kelas: { id: jamDetailJadwal.kelas.id } },
-  //   });
+    if (!cek) {
+      throw new HttpException('Absen kelas not found', HttpStatus.NOT_FOUND);
+    }
 
-  //   for (const student of students) {
-  //     student.jamDetailJadwal_id = null;
-  //     await this.siswaRepository.save(student); // Use save instead of update
-  //   }
+    await this.prisma.absen_kelas.delete({
+      where: { id },
+    });
 
-  //   return {
-  //     status: 'Success',
-  //     message: 'OKe',
-  //     data: jurnalKegiatan
-  //   };
-  // }
+    return {
+      status: 'Success',
+      message: 'OKe',
+    };
+  }
+  async listAbsenKelas(): Promise<any> {
+    const absenKelasList = await this.prisma.absen_kelas.findMany({
+      include: {
+        kelas: true,
+        user: true,
+        absen_siswa: {
+          include: {
+            user: true,
+          },
+        },
+        jam_detail_jadwal: {
+          include: {
+            subject_code_entity: {
+              include: {
+                mapel: true,
+              },
+            },
+          },
+        },
+      },
+    });
 
-  // async getAbsenKelasDetail(id: number): Promise<any> {
-  //   const absenKelas = await this.absenKelasRepository.findOne({
-  //     where: { id },
-  //     relations: [
-  //       'kelas',
-  //       'jamJadwal',
-  //       'jamDetailJadwal',
-  //       'jamDetailJadwal.subject_code',
-  //       'jamDetailJadwal.subject_code.mapel',
-  //       'absenSiswa',
-  //       'absenSiswa.user',
-  //     ],
-  //   });
+    const data = absenKelasList.map((absenKelas) => ({
+      id: absenKelas.id,
+      nama_kelas: absenKelas.kelas.nama_kelas,
+      code_kelas: absenKelas.kode_kelas,
+      nama_mapel: absenKelas.jam_detail_jadwal.subject_code_entity.mapel.nama_mapel,
+      subject_code: absenKelas.jam_detail_jadwal.subject_code_entity.code,
+      guru: absenKelas.user.nama,
+      daftar_siswa: absenKelas.absen_siswa.map((siswa) => ({
+        id: siswa.user.id,
+        nama: siswa.user.nama,
+        status: siswa.status,
+        waktu_absen: siswa.waktu_absen,
+      })),
+    }));
 
-  //   if (!absenKelas) {
-  //     throw new HttpException('Absen Kelas not found', HttpStatus.NOT_FOUND);
-  //   }
+    return {
+      status: 'Success',
+      message: 'OKe',
+      data: data,
+    };
+  }
+  async list(): Promise<any> {
+    const absens = await this.prisma.absen_siswa.findMany();
 
-  //   const siswaList = await this.absenSiswaRepository.find({
-  //     where: { absenKelas: { id: absenKelas.id } },
-  //     relations: ['user'],
-  //   });
+    // const data = absens.map((absen) => ({
+    //   id: absen.id,
+    //   nama: absen.guru.user.nama,
+    //   waktu_absen: absen.waktu_absen,
+    //   status: absen.status,
+    //   hasil_jurnal_kegiatan: absen.hasil_jurnal_kegiatan,
+    //   hari: absen.jadwal.hari,
+    //   jam_mulai: absen.jamJadwal.jam_mulai,
+    //   jam_selesai: absen.jamJadwal.jam_selesai,
+    //   subject_code: absen.jamDetailJadwal.subject_code.code,
+    //   kelas: absen.jamDetailJadwal.kelas.nama_kelas,
+    //   role: absen.guru.user.role,
+    // }));
 
-  //   const formattedDate = new Date().toLocaleDateString('en-GB', {
-  //     day: 'numeric',
-  //     month: 'long',
-  //     year: 'numeric',
-  //   });
+    return {
+      status: 'Success',
+      message: 'OKe',
+      data: absens,
+    };
+  }
+  async delete(id: number): Promise<any> {
+    const absen = await this.prisma.absen_kelas.findUnique({
+      where: { id },
+    });
 
-  //   const kelas = await this.kelasRepository.findOne({
-  //     where: { id: absenKelas.kelas.id },
-  //     relations: ['siswa'], // Ensure to load the related siswa
-  //   });
+    if (!absen) {
+      throw new HttpException('Attendance not found', HttpStatus.NOT_FOUND);
+    }
 
-  //   const totalSiswa = kelas.siswa.length;
-  //   const jumlahHadir = siswaList.filter(
-  //     (siswa) => siswa.status === 'Hadir',
-  //   ).length;
-  //   const jumlahTelat = siswaList.filter(
-  //     (siswa) => siswa.status === 'Telat',
-  //   ).length;
-  //   const jumlahAlpha = siswaList.filter(
-  //     (siswa) => siswa.status === 'Alpha',
-  //   ).length;
+    await this.prisma.absen_kelas.delete({
+      where: { id },
+    });
 
-  //   const data = {
-  //     id: absenKelas.id,
-  //     kode_kelas: absenKelas.kode_kelas,
-  //     nama_kelas: absenKelas.kelas.nama_kelas,
-  //     nama_mapel: absenKelas.jamDetailJadwal.subject_code.mapel.nama_mapel,
-  //     jam_mulai: absenKelas.jamJadwal.jam_mulai,
-  //     jam_selesai: absenKelas.jamJadwal.jam_selesai,
-  //     subject_code: absenKelas.jamDetailJadwal.subject_code.code,
-  //     jumlah_siswa: totalSiswa, // Total siswa
-  //     jumlah_hadir: jumlahHadir, // Jumlah siswa yang hadir
-  //     jumlah_telat: jumlahTelat, // Jumlah siswa yang telat
-  //     jumlah_alpha: jumlahAlpha,
-  //     daftar_siswa: siswaList.map((siswa) => ({
-  //       id: siswa.user.id,
-  //       nama: siswa.user.nama,
-  //       status: siswa.status,
-  //       tanggal: formattedDate,
-  //       waktu_masuk: new Date(siswa.waktu_absen).toLocaleDateString('en-GB', {
-  //         minute: '2-digit',
-  //         hour: '2-digit',
-  //         day: 'numeric',
-  //         month: 'long',
-  //         year: 'numeric',
-  //       }),
-  //       waktu_keluar: null,
-  //     })),
-  //   };
-
-  //   return {
-  //     status: 'Success',
-  //     message: 'OKe',
-  //     data: data
-  //   };
-  // }
-
-  // async deleteAbsenKelas(id: number): Promise<any> {
-  //   const cek = await this.absenKelasRepository.find({
-  //     where: {
-  //       id,
-  //     },
-  //   });
-
-  //   if (!cek) {
-  //     throw new HttpException('absen kelas not found', HttpStatus.NOT_FOUND);
-  //   }
-
-  //   await this.absenKelasRepository.remove(cek);
-  //   return {
-  //     status: 'Success',
-  //     message: 'OKe',
-  //     // data: hasil
-  //   };
-  // }
-
-  // private generateClassCode(): string {
-  //   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  //   let result = '';
-  //   for (let i = 0; i < 6; i++) {
-  //     result += characters.charAt(
-  //       Math.floor(Math.random() * characters.length),
-  //     );
-  //   }
-  //   return result;
-  // }
-
-  // async listAbsenKelas(): Promise<any> {
-  //   // Find all AbsenKelas entries along with relations to Kelas and Guru
-  //   const absenKelasList = await this.absenKelasRepository.find({
-  //     relations: [
-  //       'kelas',
-  //       'user',
-  //       'absenSiswa',
-  //       'jamDetailJadwal',
-  //       'jamDetailJadwal.subject_code',
-  //       'jamDetailJadwal.subject_code.mapel',
-  //     ],
-  //   });
-
-  //   const data = await Promise.all(
-  //     absenKelasList.map(async (absenKelas) => {
-  //       // Retrieve the list of students who have entered the class
-  //       const siswaList = await this.absenSiswaRepository.find({
-  //         where: { absenKelas: { id: absenKelas.id } },
-  //         relations: ['user'],
-  //       });
-
-  //       return {
-  //         id: absenKelas.id,
-  //         nama_kelas: absenKelas.kelas.nama_kelas,
-  //         code_kelas: absenKelas.kode_kelas,
-  //         nama_mapel: absenKelas.jamDetailJadwal.subject_code.mapel.nama_mapel,
-  //         subject_code: absenKelas.jamDetailJadwal.subject_code.code,
-  //         guru: absenKelas.user.nama, // assuming guru entity has a 'nama' field
-  //         daftar_siswa: siswaList.map((siswa) => ({
-  //           id: siswa.user.id,
-  //           nama: siswa.user.nama,
-  //           status: siswa.status,
-  //           waktu_absen: siswa.waktu_absen,
-  //         })),
-  //       };
-  //     }),
-  //   );
-
-  //   return {
-  //     status: 'Success',
-  //     message: 'OKe',
-  //     data: data
-  //   };
-  // }
-
-  // async list(): Promise<any> {
-  //   const absens = await this.absenRepository.find({
-  //     relations: [
-  //       'jadwal',
-  //       'guru.user',
-  //       'jamJadwal',
-  //       'jamDetailJadwal',
-  //       'jamDetailJadwal.mapel',
-  //       'jamDetailJadwal.kelas',
-  //     ],
-  //   });
-
-  //   const data = absens.map((absen) => ({
-  //     id: absen.id,
-  //     nama: absen.guru.user.nama,
-  //     waktu_absen: absen.waktu_absen,
-  //     status: absen.status,
-  //     hasil_jurnal_kegiatan: absen.hasil_jurnal_kegiatan,
-  //     hari: absen.jadwal.hari,
-  //     jam_mulai: absen.jamJadwal.jam_mulai,
-  //     jam_selesai: absen.jamJadwal.jam_selesai,
-  //     subject_code: absen.jamDetailJadwal.subject_code.code,
-  //     kelas: absen.jamDetailJadwal.kelas.nama_kelas,
-  //     role: absen.guru.user.role,
-  //   }));
-
-  //   return {
-  //     status: 'Success',
-  //     message: 'OKe',
-  //     data: data
-  //   };
-  // }
-
-  // async delete(id: number): Promise<any> {
-  //   const absen = await this.absenRepository.findOne({ where: { id } });
-
-  //   if (!absen) {
-  //     throw new HttpException('Attendance not found', HttpStatus.NOT_FOUND);
-  //   }
-
-  //   await this.absenRepository.remove(absen);
-  //   return {
-  //     status: 'Success',
-  //     message: 'OKe',
-  //     data: absen
-  //   };
-  // }
+    return {
+      status: 'Success',
+      message: 'OKe',
+      data: absen,
+    };
+  }
+  private generateClassCode(): string {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 6; i++) {
+      result += characters.charAt(
+        Math.floor(Math.random() * characters.length),
+      );
+    }
+    return result;
+  }
 }
