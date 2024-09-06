@@ -286,100 +286,106 @@ export class JadwalService extends BaseResponse {
 
   async create(createJadwalDto: CreateJadwalDto): Promise<any> {
     const { hari_id, jam_jadwal } = createJadwalDto;
-    // Check if Hari and User records exist
-    const hari = await this.prisma.hari.findUnique({
-      where: { id: hari_id },
-    });
-    if (!hari) {
-      throw new HttpException('Hari not found', HttpStatus.NOT_FOUND);
-    }
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: this.req.user.id },
-    });
-    if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-    }
-
-    // Check if Jadwal for the given day already exists
-    const existingJadwal = await this.prisma.jadwal.findFirst({
-      where: { hariId: hari_id },
-      include: { hari: true },
-    });
-
-    if (existingJadwal) {
-      throw new HttpException(
-        `Jadwal for ${existingJadwal.hari.nama_hari} already exists`,
-        HttpStatus.FOUND,
-      );
-    }
-
-    // Create the main Jadwal entity
-    const jadwal = await this.prisma.jadwal.create({
-      data: {
-        hariId: hari_id,
-        created_by: this.req.user.id,
-      },
-    });
-
-    // Loop through each JamJadwal DTO to create related entities
-    // let lastSavedJamJadwal: any;
-    for (const jamJadwalDto of jam_jadwal) {
-      // Create the JamJadwal entity
-      const jamJadwal = await this.prisma.jam_jadwal.create({
+  
+    // Gunakan transaksi untuk memastikan atomicity
+    return await this.prisma.$transaction(async (prisma) => {
+      // Periksa apakah Hari dan User ada
+      const hari = await prisma.hari.findUnique({
+        where: { id: hari_id },
+      });
+      if (!hari) {
+        throw new HttpException('Hari not found', HttpStatus.NOT_FOUND);
+      }
+  
+      const user = await prisma.user.findUnique({
+        where: { id: this.req.user.id },
+      });
+      if (!user) {
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      }
+  
+      // Periksa apakah Jadwal untuk hari yang diberikan sudah ada
+      const existingJadwal = await prisma.jadwal.findFirst({
+        where: { hariId: hari_id },
+        include: { hari: true },
+      });
+  
+      if (existingJadwal) {
+        throw new HttpException(
+          `Jadwal for ${existingJadwal.hari.nama_hari} already exists`,
+          HttpStatus.FOUND,
+        );
+      }
+  
+      // Buat entitas Jadwal utama
+      const jadwal = await prisma.jadwal.create({
         data: {
-          jam_mulai: jamJadwalDto.jam_mulai,
-          jam_selesai: jamJadwalDto.jam_selesai,
-          is_rest: jamJadwalDto.is_rest,
-          jadwal_id: jadwal.id, // Note the correct field name in Prisma
+          hariId: hari_id,
+          created_by: this.req.user.id,
         },
       });
-
-      // lastSavedJamJadwal = jamJadwal;
-
-      // Loop through each JamDetailJadwal DTO to create related entities
-      for (const jdDto of jamJadwalDto.jam_detail) {
-        // Find the related Kelas and SubjectCode entities
-        const kelas = await this.prisma.kelas.findUnique({
-          where: { id: jdDto.kelas },
-        });
-        const subject_code = await this.prisma.subject_code_entity.findUnique({
-          where: { id: parseInt(jdDto.subject_code, 10) },
-        });
-
-        // Check if Kelas and SubjectCode entities are found
-        if (!kelas || !subject_code) {
-          throw new HttpException(
-            'Kelas or Subject Code not found',
-            HttpStatus.NOT_FOUND,
-          );
-        }
-
-        // Create the JamDetailJadwal entity
-        await this.prisma.jam_detail_jadwal.create({
+  
+      // Loop melalui setiap DTO JamJadwal untuk membuat entitas terkait
+      let lastSavedJamJadwal;
+      for (const jamJadwalDto of jam_jadwal) {
+        // Buat entitas JamJadwal
+        const jamJadwal = await prisma.jam_jadwal.create({
           data: {
-            jamJadwalId: jamJadwal.id, // Note the correct field name in Prisma
-            kelasId: kelas.id,
-            subjectCodeId: subject_code.id,
+            jam_mulai: jamJadwalDto.jam_mulai,
+            jam_selesai: jamJadwalDto.jam_selesai,
+            is_rest: jamJadwalDto.is_rest,
+            jadwal_id: jadwal.id, // Nama field yang benar di Prisma
           },
         });
+  
+        // Simpan entitas JamJadwal terakhir
+        lastSavedJamJadwal = jamJadwal;
+  
+        // Loop melalui setiap DTO JamDetailJadwal untuk membuat entitas terkait
+        for (const jdDto of jamJadwalDto.jam_detail) {
+          // Temukan entitas Kelas dan SubjectCode terkait
+          const kelas = await prisma.kelas.findUnique({
+            where: { id: jdDto.kelas },
+          });
+          const subject_code = await prisma.subject_code_entity.findUnique({
+            where: { id: parseInt(jdDto.subject_code, 10) },
+          });
+  
+          // Periksa apakah entitas Kelas dan SubjectCode ditemukan
+          if (!kelas || !subject_code) {
+            throw new HttpException(
+              'Kelas or Subject Code not found',
+              HttpStatus.NOT_FOUND,
+            );
+          }
+  
+          // Buat entitas JamDetailJadwal
+          await prisma.jam_detail_jadwal.create({
+            data: {
+              jamJadwalId: jamJadwal.id,
+              kelasId: kelas.id,
+              subjectCodeId: subject_code.id,
+            },
+          });
+        }
       }
-    }
-
-    // // Set the last JamJadwal's allSchedulesDone to true
-    // if (lastSavedJamJadwal) {
-    //   await this.prisma.jam_jadwal.update({
-    //     where: { id: lastSavedJamJadwal.id },
-    //     data: { allSchedulesDone: true },
-    //   });
-    // }
-
-    return {
-      status: 'Success',
-      message: 'Jadwal created successfully',
-      data: jadwal,
-    };
+  
+      // Set last JamJadwal's allSchedulesDone ke true
+      if (lastSavedJamJadwal) {
+        await prisma.jam_jadwal.update({
+          where: { id: lastSavedJamJadwal.id },
+          data: { allSchedulesDone: true },
+        });
+      }
+  
+      return {
+        status: 'Success',
+        message: 'Jadwal created successfully',
+        data: jadwal,
+      };
+    });
   }
+  
 
   async update(id: number, updateJadwalDto: UpdateJadwalDto): Promise<any> {
     // Find the existing Jadwal entity
