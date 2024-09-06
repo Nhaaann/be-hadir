@@ -88,6 +88,7 @@ model guru {
   mapel               mapel[]
   rekap_absen         rekap_absen[]
   subject_code_entity subject_code_entity[]
+  // guru_mapel_mapel    guru_mapel_mapel[]
   guru_mapel_mapel    guru_mapel_mapel[]
 }
 
@@ -259,12 +260,12 @@ model user {
 model guru_mapel_mapel {
   guruId  Int
   mapelId Int
-  guru    guru  @relation(fields: [guruId], references: [id], onDelete: Cascade, map: "FK_c305edb353ed0706b820a883f65")
-  mapel   mapel @relation(fields: [mapelId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d95d4e976fcb0282f46efd073c0")
+  guru    guru  @relation(fields: [guruId], references: [id], onDelete: Cascade, map: "FK_guru_to_guru_mapel")
+  mapel   mapel @relation(fields: [mapelId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_mapel_to_guru_mapel")
 
-  @@id([guruId, mapelId], map: "pk_guru_mapel")
-  @@index([guruId], map: "IDX_c305edb353ed0706b820a883f6")
-  @@index([mapelId], map: "IDX_d95d4e976fcb0282f46efd073c")
+  
+  @@id([guruId, mapelId]) // Composite primary key
+  @@map("guru_mapel_mapel") // Map to the table name for the join table
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

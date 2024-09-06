@@ -46,36 +46,29 @@ export class GuruService {
       throw new HttpException('Some mapel not found', HttpStatus.NOT_FOUND);
     }
 
-    // Use a transaction to ensure all operations succeed
-    const [guru, subjectCodes] = await this.prisma.$transaction(
-      async (prisma) => {
-        // Create guru
-        const guru = await prisma.guru.create({
-          data: {
-            id: user.id,
-            initial_schedule,
-            user: { connect: { id: user.id } },
-            mapel: {
-              connect: mapelEntities.map((subject) => ({ id: subject.id })),
-            },
-          },
-        });
-
-        // Create subject codes
-        const subjectCodes = await Promise.all(
-          mapelEntities.map((subject, index) =>
-            prisma.subject_code_entity.create({
-              data: {
-                code: `${initial_schedule}${index + 1}`,
-                guru: { connect: { id: guru.id } },
-                mapel: { connect: { id: subject.id } },
-              },
-            }),
-          ),
-        );
-
-        return [guru, subjectCodes];
+    // Create guru
+    const guru = await this.prisma.guru.create({
+      data: {
+        id: user.id,
+        initial_schedule,
+        user: { connect: { id: user.id } },
+        mapel: {
+          connect: mapelEntities.map((mapel) => ({ id: mapel.id })),
+        },
       },
+    });
+
+    // Create subject codes
+    await Promise.all(
+      mapelEntities.map((subject, index) =>
+        this.prisma.subject_code_entity.create({
+          data: {
+            code: `${initial_schedule}${index + 1}`,
+            guru: { connect: { id: guru.id } },
+            mapel: { connect: { id: subject.id } },
+          },
+        }),
+      ),
     );
 
     return {
@@ -211,11 +204,11 @@ export class GuruService {
         },
       },
     });
-  
+
     // Transform the data to match the desired format
     const transformedData = guruList.map((guru) => {
       const { user, subject_code_entity, ...rest } = guru;
-  
+
       return {
         id: guru.id,
         initial_schedule: guru.initial_schedule,
@@ -243,14 +236,13 @@ export class GuruService {
         })),
       };
     });
-  
+
     return {
       status: 'success',
       message: 'List of teachers retrieved successfully',
       data: transformedData,
     };
   }
-  
 
   async getGuruListWithSubject(): Promise<any> {
     const guruList = await this.prisma.guru.findMany({
