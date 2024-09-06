@@ -15,7 +15,13 @@ import {
   isCurrentTimeBetween,
 } from '../../utils/helper function/getDay';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { guru, jadwal, jam_detail_jadwal, jam_jadwal, murid } from '@prisma/client';
+import {
+  guru,
+  jadwal,
+  jam_detail_jadwal,
+  jam_jadwal,
+  murid,
+} from '@prisma/client';
 import BaseResponse from '../../utils/response/base.response';
 
 @Injectable()
@@ -23,7 +29,9 @@ export class JadwalService extends BaseResponse {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(REQUEST) private req: any,
-  ) {super()}
+  ) {
+    super();
+  }
 
   async getCurrentJamDetailUser(): Promise<ResponseSuccess> {
     const todayDayName = getTodayDayNames();
@@ -52,7 +60,7 @@ export class JadwalService extends BaseResponse {
         },
       },
     });
-  
+
     const user =
       (await this.prisma.murid.findUnique({
         where: { id: this.req.user.id },
@@ -76,61 +84,63 @@ export class JadwalService extends BaseResponse {
           },
         },
       }));
-  
+
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
-  
+
     const currentTime = new Date();
     const currentDate = currentTime.toISOString().split('T')[0];
-  
+
     const todaysSchedules = jadwalList
       .flatMap((jadwal) =>
         jadwal.jam_jadwal.map((jamJadwal) => {
           let jamDetail = null;
-  
+
           if ('kelas' in user) {
             // Siswa
             jamDetail = jamJadwal.jam_detail_jadwal.find(
-              (detail) => detail.kelas.id === user.kelas.id
+              (detail) => detail.kelas.id === user.kelas.id,
             );
           } else if ('subject_code_entity' in user) {
             // Guru
             jamDetail = jamJadwal.jam_detail_jadwal.find(
-              (detail) => detail.subject_code_entity?.guru?.id === user.id
+              (detail) => detail.subject_code_entity.guru.id === user.id,
             );
           }
-  
+
           return {
             jamJadwal,
             jamDetail,
           };
-        })
+        }),
       )
       .filter((item) => item.jamDetail);
-  
+
     todaysSchedules.sort((a, b) => {
       const jamMulaiA = new Date(`${currentDate}T${a.jamJadwal.jam_mulai}`);
       const jamMulaiB = new Date(`${currentDate}T${b.jamJadwal.jam_mulai}`);
       return jamMulaiA.getTime() - jamMulaiB.getTime();
     });
-  
+
     const allSchedulesDone = this.checkIfAllSchedulesDone(
       todaysSchedules,
       currentTime,
-      currentDate
+      currentDate,
     );
-  
+
     for (const schedule of todaysSchedules) {
-      const jamMulai = new Date(`${currentDate}T${schedule.jamJadwal.jam_mulai}`);
-      const jamSelesai = new Date(
-        `${currentDate}T${schedule.jamJadwal.jam_selesai}`
+      const jamMulai = new Date(
+        `${currentDate}T${schedule.jamJadwal.jam_mulai}`,
       );
-  
+      const jamSelesai = new Date(
+        `${currentDate}T${schedule.jamJadwal.jam_selesai}`,
+      );
+
       if (currentTime >= jamMulai && currentTime <= jamSelesai) {
         let isAbsen = false;
         let isMasukKelas = false;
-  
+
         // Check attendance status for the user
         if ('kelas' in user) {
           // Siswa
@@ -150,18 +160,18 @@ export class JadwalService extends BaseResponse {
               guru_id: user.id,
             },
           });
-  
+
           const absenKelas = await this.prisma.absen_kelas.findFirst({
             where: {
               jamDetailJadwalId: schedule.jamDetail.id,
               guruId: user.id,
             },
           });
-  
+
           isAbsen = !!absenGuru;
           isMasukKelas = !!absenKelas;
         }
-  
+
         return this._success('Jam detail found successfully', {
           id_user: user.user.nama,
           nama_user: user.user.nama,
@@ -179,16 +189,18 @@ export class JadwalService extends BaseResponse {
         });
       }
     }
-  
+
     if (todaysSchedules.length > 0) {
       const nextSchedule = todaysSchedules[0];
       const isJadwalHabis =
         allSchedulesDone ||
-        currentTime >= new Date(`${currentDate}T${nextSchedule.jamJadwal.jam_selesai}`);
+        currentTime >=
+          new Date(`${currentDate}T${nextSchedule.jamJadwal.jam_selesai}`);
       const isMulai =
         !isJadwalHabis &&
-        currentTime >= new Date(`${currentDate}T${nextSchedule.jamJadwal.jam_mulai}`);
-  
+        currentTime >=
+          new Date(`${currentDate}T${nextSchedule.jamJadwal.jam_mulai}`);
+
       return this._success('Jam detail found successfully', {
         id_user: user.user.id,
         nama_user: user.user.nama,
@@ -205,12 +217,13 @@ export class JadwalService extends BaseResponse {
         is_jadwal_habis_hari_ini: allSchedulesDone,
       });
     }
-  
-    throw new HttpException('Jam detail not found for today', HttpStatus.NOT_FOUND);
+
+    throw new HttpException(
+      'Jam detail not found for today',
+      HttpStatus.NOT_FOUND,
+    );
   }
-  
-  
-  
+
   async findOne(id: number): Promise<any> {
     // Cari jadwal dengan menggunakan Prisma dan melakukan eager loading pada relasi yang dibutuhkan
     const jadwal = await this.prisma.jadwal.findFirst({
@@ -310,7 +323,7 @@ export class JadwalService extends BaseResponse {
     });
 
     // Loop through each JamJadwal DTO to create related entities
-    let lastSavedJamJadwal: any;
+    // let lastSavedJamJadwal: any;
     for (const jamJadwalDto of jam_jadwal) {
       // Create the JamJadwal entity
       const jamJadwal = await this.prisma.jam_jadwal.create({
@@ -322,7 +335,7 @@ export class JadwalService extends BaseResponse {
         },
       });
 
-      lastSavedJamJadwal = jamJadwal;
+      // lastSavedJamJadwal = jamJadwal;
 
       // Loop through each JamDetailJadwal DTO to create related entities
       for (const jdDto of jamJadwalDto.jam_detail) {
@@ -345,7 +358,7 @@ export class JadwalService extends BaseResponse {
         // Create the JamDetailJadwal entity
         await this.prisma.jam_detail_jadwal.create({
           data: {
-            jamJadwalId: lastSavedJamJadwal.id, // Note the correct field name in Prisma
+            jamJadwalId: jamJadwal.id, // Note the correct field name in Prisma
             kelasId: kelas.id,
             subjectCodeId: subject_code.id,
           },
@@ -353,13 +366,13 @@ export class JadwalService extends BaseResponse {
       }
     }
 
-    // Set the last JamJadwal's allSchedulesDone to true
-    if (lastSavedJamJadwal) {
-      await this.prisma.jam_jadwal.update({
-        where: { id: lastSavedJamJadwal.id },
-        data: { allSchedulesDone: true },
-      });
-    }
+    // // Set the last JamJadwal's allSchedulesDone to true
+    // if (lastSavedJamJadwal) {
+    //   await this.prisma.jam_jadwal.update({
+    //     where: { id: lastSavedJamJadwal.id },
+    //     data: { allSchedulesDone: true },
+    //   });
+    // }
 
     return {
       status: 'Success',
@@ -661,7 +674,9 @@ export class JadwalService extends BaseResponse {
     }
 
     await this.prisma.jadwal.delete({
-      where: { id: id },
+      where: {
+        id: id
+      }
     });
 
     return {
@@ -715,14 +730,14 @@ export class JadwalService extends BaseResponse {
           guru_id: user.id,
         },
       });
-  
+
       const absenKelas = await this.prisma.absen_kelas.findFirst({
         where: {
           jamDetailJadwalId: schedule.jamDetail.id,
           guruId: user.id,
         },
       });
-  
+
       return {
         isAbsen: !!absenGuru,
         isMasukKelas: !!absenKelas,
@@ -730,7 +745,6 @@ export class JadwalService extends BaseResponse {
     }
     return { isAbsen: false, isMasukKelas: false };
   }
-  
 
   private findJamDetail(
     jamDetailList: any[],
@@ -747,7 +761,7 @@ export class JadwalService extends BaseResponse {
     }
     return null;
   }
-  
+
   private checkIfAllSchedulesDone(
     schedules: any[],
     currentTime: Date,
@@ -757,12 +771,10 @@ export class JadwalService extends BaseResponse {
     const lastJamSelesai = lastSchedule
       ? new Date(`${currentDate}T${lastSchedule.jam_jadwal.jam_selesai}`)
       : null;
-  
+
     return (
       lastSchedule?.jam_jadwal.allSchedulesDone ||
       (lastJamSelesai && currentTime > lastJamSelesai)
     );
   }
-  
-  
 }
