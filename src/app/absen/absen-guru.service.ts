@@ -103,12 +103,12 @@ export class AbsenGuruService {
     const jamMulai = new Date(`${currentDate}T${jam_jadwal.jam_mulai}`);
     const jamSelesai = new Date(`${currentDate}T${jam_jadwal.jam_selesai}`);
 
-    if (currentTime < jamMulai || currentTime > jamSelesai) {
-      throw new HttpException(
-        'Anda tidak bisa absen karena belum waktunya',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+    // if (currentTime < jamMulai || currentTime > jamSelesai) {
+    //   throw new HttpException(
+    //     'Anda tidak bisa absen karena belum waktunya',
+    //     HttpStatus.BAD_REQUEST,
+    //   );
+    // }
 
     let status = 'Hadir';
     const diffInMinutes = Math.floor(
