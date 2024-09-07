@@ -11,7 +11,10 @@ function timeStringToDate(timeString: string): Date {
 }
 
 // Helper function to check if current time is between startTime and endTime
-export function isCurrentTimeBetween(startTime: string, endTime: string): boolean {
+export function isCurrentTimeBetween(
+  startTime: string,
+  endTime: string,
+): boolean {
   const now = new Date();
   const start = timeStringToDate(startTime);
   const end = timeStringToDate(endTime);
@@ -19,8 +22,21 @@ export function isCurrentTimeBetween(startTime: string, endTime: string): boolea
 }
 
 // Helper function to get today's day name (assuming your `hari` entity has names like 'Sunday', 'Monday', etc.)
-export function getTodayDayNames(): string {
-  const days = [ 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+export function getTodayDayName(): string {
+  const daysOfWeek = [
+    'Minggu',
+    'Senin',
+    'Selasa',
+    'Rabu',
+    'Kamis',
+    'Jumat',
+    'Sabtu',
+  ];
   const today = new Date();
-  return days[today.getDay()];
+  const dayIndex = today.getDay();
+  return daysOfWeek[dayIndex];
 }
+
+// Contoh penggunaan
+const todayDayName = getTodayDayName();
+console.log(todayDayName); // Output: 'Sabtu' (atau hari saat ini)

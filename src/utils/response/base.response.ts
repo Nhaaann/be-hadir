@@ -1,5 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
-import { ResponsePagination, ResponseSuccess } from 'src/interface/respone';
+import { ResponsePagination, ResponseSuccess } from '../interface/respone';
+// import { ResponsePagination, ResponseSuccess } from 'src/interface/respone';
 
 class BaseResponse {
   _success(message: string, data?: any): ResponseSuccess {

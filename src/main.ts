@@ -25,6 +25,6 @@ async function bootstrap() {
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
   app.useWebSocketAdapter(new IoAdapter(app));
   
-  await app.listen(3000);
+  await app.listen(2009);
 }
 bootstrap();

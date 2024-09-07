@@ -11,7 +11,8 @@ import {
 import { ResponseSuccess } from 'src/utils/interface/respone';
 import { REQUEST } from '@nestjs/core';
 import {
-  getTodayDayNames,
+  getTodayDayName,
+  // getTodayDayName,
   isCurrentTimeBetween,
 } from '../../utils/helper function/getDay';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -34,7 +35,7 @@ export class JadwalService extends BaseResponse {
   }
 
   async getCurrentJamDetailUser(): Promise<ResponseSuccess> {
-    const todayDayName = getTodayDayNames();
+    const todayDayName = getTodayDayName();
     const jadwalList = await this.prisma.jadwal.findMany({
       where: {
         hari: {
@@ -60,58 +61,57 @@ export class JadwalService extends BaseResponse {
         },
       },
     });
-
-    const user =
-      (await this.prisma.murid.findUnique({
-        where: { id: this.req.user.id },
-        include: {
-          kelas: true,
-          user: {
-            include: {
-              murid: true,
-            },
+  
+    // Check if the user is a student (murid)
+    const murid = await this.prisma.murid.findUnique({
+      where: { id: this.req.user.id },
+      include: {
+        kelas: true,
+        user: {
+          include: {
+            murid: true,
           },
         },
-      })) ||
-      (await this.prisma.guru.findUnique({
-        where: { id: this.req.user.id },
-        include: {
-          subject_code_entity: true,
-          user: {
-            include: {
-              guru: true,
-            },
+      },
+    });
+  
+    // Check if the user is a teacher (guru)
+    const guru = await this.prisma.guru.findUnique({
+      where: { id: this.req.user.id },
+      include: {
+        subject_code_entity: true,
+        user: {
+          include: {
+            guru: true,
           },
         },
-      }));
-
-    if (!user) {
+      },
+    });
+  
+    if (!murid && !guru) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
-
+  
     const currentTime = new Date();
     const currentDate = currentTime.toISOString().split('T')[0];
-
+  
     const todaysSchedules = jadwalList
       .flatMap((jadwal) =>
         jadwal.jam_jadwal.map((jamJadwal) => {
           let jamDetail = null;
-
-          if ('kelas' in user && user.kelas) {
-            // Siswa
+  
+          if (murid) {
+            // If the user is a student
             jamDetail = jamJadwal.jam_detail_jadwal.find(
-              (detail) => detail.kelas.id === user.kelas.id,
+              (detail) => detail.kelas.id === murid.kelas.id,
             );
-          } else if (
-            'subject_code_entity' in user &&
-            user.subject_code_entity
-          ) {
-            // Guru
+          } else if (guru) {
+            // If the user is a teacher
             jamDetail = jamJadwal.jam_detail_jadwal.find((detail) =>
-              detail.subject_code_entity.guru.id === user.id
+              detail.subject_code_entity.guru.id === guru.id,
             );
           }
-
+  
           return {
             jamJadwal,
             jamDetail,
@@ -119,67 +119,63 @@ export class JadwalService extends BaseResponse {
         }),
       )
       .filter((item) => item.jamDetail);
-
+  
     todaysSchedules.sort((a, b) => {
       const jamMulaiA = new Date(`${currentDate}T${a.jamJadwal.jam_mulai}`);
       const jamMulaiB = new Date(`${currentDate}T${b.jamJadwal.jam_mulai}`);
       return jamMulaiA.getTime() - jamMulaiB.getTime();
     });
-
+  
     const allSchedulesDone = this.checkIfAllSchedulesDone(
       todaysSchedules,
       currentTime,
       currentDate,
     );
-
+  
     for (const schedule of todaysSchedules) {
-      const jamMulai = new Date(
-        `${currentDate}T${schedule.jamJadwal.jam_mulai}`,
-      );
+      const jamMulai = new Date(`${currentDate}T${schedule.jamJadwal.jam_mulai}`);
       const jamSelesai = new Date(
         `${currentDate}T${schedule.jamJadwal.jam_selesai}`,
       );
-
+  
       if (currentTime >= jamMulai && currentTime <= jamSelesai) {
         let isAbsen = false;
         let isMasukKelas = false;
-
-        // Check attendance status for the user
-        // Cek tipe user dengan cara yang lebih eksplisit
-        if ('kelas' in user  && user.kelas) {
-          // Siswa
+  
+        if (murid) {
+          // Check attendance status for the student
           const absenSiswa = await this.prisma.absen_siswa.findFirst({
             where: {
               absenKelasId: schedule.jamDetail.id,
-              userId: user.id,
+              userId: murid.id,
             },
           });
           isAbsen = !!absenSiswa;
           isMasukKelas = !!absenSiswa;
-        } else if ('subject_code_entity' in user && user.subject_code_entity) {
-          // Guru
+        } else if (guru) {
+          // Check attendance status for the teacher
           const absenGuru = await this.prisma.absen_guru.findFirst({
             where: {
               jamDetailJadwalId: schedule.jamDetail.id,
-              guru_id: user.id,
+              guru_id: guru.id,
             },
           });
-
+  
           const absenKelas = await this.prisma.absen_kelas.findFirst({
             where: {
               jamDetailJadwalId: schedule.jamDetail.id,
-              guruId: user.id,
+              guruId: guru.id,
             },
           });
-
+  
           isAbsen = !!absenGuru;
           isMasukKelas = !!absenKelas;
         }
-
+  
         return this._success('Jam detail found successfully', {
-          id_user: user.user.nama,
-          nama_user: user.user.nama,
-          role: user.user.role,
+          id_user: murid ? murid.user.nama : guru.user.nama,
+          nama_user: murid ? murid.user.nama : guru.user.nama,
+          role: murid ? murid.user.role : guru.user.role,
           jamDetailId: schedule.jamDetail.id,
           jam_mulai: schedule.jamJadwal.jam_mulai,
           jam_selesai: schedule.jamJadwal.jam_selesai,
@@ -193,7 +189,7 @@ export class JadwalService extends BaseResponse {
         });
       }
     }
-
+  
     if (todaysSchedules.length > 0) {
       const nextSchedule = todaysSchedules[0];
       const isJadwalHabis =
@@ -202,13 +198,12 @@ export class JadwalService extends BaseResponse {
           new Date(`${currentDate}T${nextSchedule.jamJadwal.jam_selesai}`);
       const isMulai =
         !isJadwalHabis &&
-        currentTime >=
-          new Date(`${currentDate}T${nextSchedule.jamJadwal.jam_mulai}`);
-
+        currentTime >= new Date(`${currentDate}T${nextSchedule.jamJadwal.jam_mulai}`);
+  
       return this._success('Jam detail found successfully', {
-        id_user: user.user.id,
-        nama_user: user.user.nama,
-        role: user.user.role,
+        id_user: murid ? murid.user.id : guru.user.id,
+        nama_user: murid ? murid.user.nama : guru.user.nama,
+        role: murid ? murid.user.role : guru.user.role,
         jamDetailId: nextSchedule.jamDetail.id,
         jam_mulai: nextSchedule.jamJadwal.jam_mulai,
         jam_selesai: nextSchedule.jamJadwal.jam_selesai,
@@ -219,14 +214,15 @@ export class JadwalService extends BaseResponse {
         is_mulai: isMulai,
         is_jadwal_habis: isJadwalHabis,
         is_jadwal_habis_hari_ini: allSchedulesDone,
-      });
+      })
     }
-
+  
     throw new HttpException(
-      'Jam detail not found for today',
+      `Jam detail not found for today (${todayDayName}), User: ${murid ? murid.user.nama : guru.user.nama} (${murid ? murid.user.role : guru.user.role})`,
       HttpStatus.NOT_FOUND,
-    );
+    )
   }
+  
 
   async findOne(id: number): Promise<any> {
     // Cari jadwal dengan menggunakan Prisma dan melakukan eager loading pada relasi yang dibutuhkan
@@ -731,18 +727,19 @@ export class JadwalService extends BaseResponse {
   }
 
   private checkIfAllSchedulesDone(
-    schedules: any[],
+    schedules: Array<{ jamJadwal: { jam_selesai?: string } }>,
     currentTime: Date,
-    currentDate: string,
+    currentDate: string
   ): boolean {
-    const lastSchedule = schedules[schedules.length - 1];
-    const lastJamSelesai = lastSchedule
-      ? new Date(`${currentDate}T${lastSchedule.jam_jadwal.jam_selesai}`)
-      : null;
-
-    return (
-      lastSchedule?.jam_jadwal.allSchedulesDone ||
-      (lastJamSelesai && currentTime > lastJamSelesai)
-    );
+    // Periksa jika schedules adalah array dan tidak kosong
+    if (!schedules || schedules.length === 0) {
+      return false;
+    }
+  
+    return schedules.every((schedule) => {
+      const jamSelesai = schedule.jamJadwal.jam_selesai ? new Date(`${currentDate}T${schedule.jamJadwal.jam_selesai}`) : null;
+      return jamSelesai && currentTime > jamSelesai;
+    });
   }
+  
 }
