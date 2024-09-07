@@ -286,9 +286,9 @@ export class JadwalService extends BaseResponse {
 
   async create(createJadwalDto: CreateJadwalDto): Promise<any> {
     const { hari_id, jam_jadwal } = createJadwalDto;
-  
+
     // Gunakan transaksi untuk memastikan atomicity
-    return await this.prisma.$transaction(async (prisma) => {
+    await this.prisma.$transaction(async (prisma) => {
       // Periksa apakah Hari dan User ada
       const hari = await prisma.hari.findUnique({
         where: { id: hari_id },
@@ -296,88 +296,49 @@ export class JadwalService extends BaseResponse {
       if (!hari) {
         throw new HttpException('Hari not found', HttpStatus.NOT_FOUND);
       }
-  
+
       const user = await prisma.user.findUnique({
         where: { id: this.req.user.id },
       });
       if (!user) {
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       }
-  
+
       // Periksa apakah Jadwal untuk hari yang diberikan sudah ada
       const existingJadwal = await prisma.jadwal.findFirst({
         where: { hariId: hari_id },
         include: { hari: true },
       });
-  
+
       if (existingJadwal) {
         throw new HttpException(
           `Jadwal for ${existingJadwal.hari.nama_hari} already exists`,
           HttpStatus.FOUND,
         );
       }
-  
-      // Buat entitas Jadwal utama
+
+      
+
       const jadwal = await prisma.jadwal.create({
         data: {
           hariId: hari_id,
-          created_by: this.req.user.id,
+          created_by: user.id,
+          jam_jadwal: {
+            create: jam_jadwal.map((jam) => ({
+              jam_mulai: jam.jam_mulai,
+              jam_selesai: jam.jam_selesai,
+              is_rest: jam.is_rest,
+              jam_detail: {
+                create: jam.jam_detail.map((detail) => ({
+                  kelasId: detail.kelas,
+                  subjectCodeId: detail.subject_code,
+                })),
+              },
+            })),
+          },
         },
       });
-  
-      // Loop melalui setiap DTO JamJadwal untuk membuat entitas terkait
-      let lastSavedJamJadwal;
-      for (const jamJadwalDto of jam_jadwal) {
-        // Buat entitas JamJadwal
-        const jamJadwal = await prisma.jam_jadwal.create({
-          data: {
-            jam_mulai: jamJadwalDto.jam_mulai,
-            jam_selesai: jamJadwalDto.jam_selesai,
-            is_rest: jamJadwalDto.is_rest,
-            jadwal_id: jadwal.id, // Nama field yang benar di Prisma
-          },
-        });
-  
-        // Simpan entitas JamJadwal terakhir
-        lastSavedJamJadwal = jamJadwal;
-  
-        // Loop melalui setiap DTO JamDetailJadwal untuk membuat entitas terkait
-        for (const jdDto of jamJadwalDto.jam_detail) {
-          // Temukan entitas Kelas dan SubjectCode terkait
-          const kelas = await prisma.kelas.findUnique({
-            where: { id: jdDto.kelas },
-          });
-          const subject_code = await prisma.subject_code_entity.findUnique({
-            where: { id: parseInt(jdDto.subject_code, 10) },
-          });
-  
-          // Periksa apakah entitas Kelas dan SubjectCode ditemukan
-          if (!kelas || !subject_code) {
-            throw new HttpException(
-              'Kelas or Subject Code not found',
-              HttpStatus.NOT_FOUND,
-            );
-          }
-  
-          // Buat entitas JamDetailJadwal
-          await prisma.jam_detail_jadwal.create({
-            data: {
-              jamJadwalId: jamJadwal.id,
-              kelasId: kelas.id,
-              subjectCodeId: subject_code.id,
-            },
-          });
-        }
-      }
-  
-      // Set last JamJadwal's allSchedulesDone ke true
-      if (lastSavedJamJadwal) {
-        await prisma.jam_jadwal.update({
-          where: { id: lastSavedJamJadwal.id },
-          data: { allSchedulesDone: true },
-        });
-      }
-  
+
       return {
         status: 'Success',
         message: 'Jadwal created successfully',
@@ -385,7 +346,6 @@ export class JadwalService extends BaseResponse {
       };
     });
   }
-  
 
   async update(id: number, updateJadwalDto: UpdateJadwalDto): Promise<any> {
     // Find the existing Jadwal entity
@@ -681,8 +641,8 @@ export class JadwalService extends BaseResponse {
 
     await this.prisma.jadwal.delete({
       where: {
-        id: id
-      }
+        id: id,
+      },
     });
 
     return {
