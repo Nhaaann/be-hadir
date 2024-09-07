@@ -291,7 +291,7 @@ export class JadwalService extends BaseResponse {
     await this.prisma.$transaction(async (prisma) => {
       // Periksa apakah Hari dan User ada
       const hari = await prisma.hari.findUnique({
-        where: { id: hari_id },
+        where: { id:  Number(hari_id) },
       });
       if (!hari) {
         throw new HttpException('Hari not found', HttpStatus.NOT_FOUND);
@@ -306,7 +306,7 @@ export class JadwalService extends BaseResponse {
 
       // Periksa apakah Jadwal untuk hari yang diberikan sudah ada
       const existingJadwal = await prisma.jadwal.findFirst({
-        where: { hariId: hari_id },
+        where: { hariId: Number(hari_id) },
         include: { hari: true },
       });
 
@@ -319,7 +319,7 @@ export class JadwalService extends BaseResponse {
 
       const jadwal = await prisma.jadwal.create({
         data: {
-          hariId: hari_id,
+          hariId: Number(hari_id),
           created_by: user.id,
           jam_jadwal: {
             create: jam_jadwal.map((jam) => ({
@@ -329,7 +329,7 @@ export class JadwalService extends BaseResponse {
               jam_detail: {
                 create: jam.jam_detail.map((detail) => ({
                   kelasId: detail.kelas,
-                  subjectCodeId: detail.subject_code
+                  subjectCodeId: Number(detail.subject_code),
                 })),
               },
             })),
