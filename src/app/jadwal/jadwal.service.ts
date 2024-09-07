@@ -326,7 +326,7 @@ export class JadwalService extends BaseResponse {
               jam_mulai: jam.jam_mulai,
               jam_selesai: jam.jam_selesai,
               is_rest: jam.is_rest,
-              jam_detail: {
+              jam_detail_jadwal: {
                 create: jam.jam_detail.map((detail) => ({
                   kelasId: detail.kelas,
                   subjectCodeId: Number(detail.subject_code),
