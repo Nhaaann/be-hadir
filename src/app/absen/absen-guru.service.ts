@@ -36,25 +36,25 @@ export class AbsenGuruService {
       longitude: currentLongitude,
     } = createAbsenDto;
 
-    const defaultLokasi = await this.prisma.geo_location.findUnique({
-      where: { id: 0 },
-    });
+    // const defaultLokasi = await this.prisma.geo_location.findUnique({
+    //   where: { id: 0 },
+    // });
 
-    if (!defaultLokasi) {
-      throw new HttpException(
-        'Default location not found',
-        HttpStatus.NOT_FOUND,
-      );
-    }
+    // if (!defaultLokasi) {
+    //   throw new HttpException(
+    //     'Default location not found',
+    //     HttpStatus.NOT_FOUND,
+    //   );
+    // }
 
-    const { latitude: defaultLatitude, longitude: defaultLongitude } =
-      defaultLokasi;
-    const distance = calculateDistance(
-      currentLatitude,
-      currentLongitude,
-      defaultLatitude,
-      defaultLongitude,
-    );
+    // const { latitude: defaultLatitude, longitude: defaultLongitude } =
+    //   defaultLokasi;
+    // const distance = calculateDistance(
+    //   currentLatitude,
+    //   currentLongitude,
+    //   defaultLatitude,
+    //   defaultLongitude,
+    // );
 
     const guru = await this.prisma.guru.findUnique({
       where: { id: this.req.user.id },
