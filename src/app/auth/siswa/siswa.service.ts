@@ -119,12 +119,20 @@ export class SiswaService {
     // Create and save student with the same ID as the user
     const siswa = await this.prisma.murid.create({
       data: {
-        user: savedUser as any,
-        kelasId: kelasExixts.id,
+        user: {
+          connect: {
+            id: savedUser.id
+          }
+        },
+        kelas: {
+          connect: {
+            id: kelasExixts.id
+          }
+        },
         NISN,
         tanggal_lahir,
         alamat,
-      } as any,
+      },
     });
 
     return {
