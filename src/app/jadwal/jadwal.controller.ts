@@ -35,6 +35,16 @@ export class JadwalController {
     return this.jadwalService.getCurrentJamDetailUser();
   }
 
+  @Get('hari-ini-guru')
+  async getCurrentJamDetailGuru() {
+    return this.jadwalService.getCurrentJamDetailIdGuru();
+  }
+
+  @Get('hari-ini-siswa')
+  async getCurrentJamDetailUser() {
+    return this.jadwalService.getCurrentJamDetailIdSiswa();
+  }
+
   @Post('create')
   // @Roles(Role.ADMIN, Role.GURU)
   async create(
