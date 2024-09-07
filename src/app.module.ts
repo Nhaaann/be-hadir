@@ -30,6 +30,7 @@ import { DownloadService } from './app/download/download.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { UploadService } from './app/upload/upload.service';
+import { UploadModule } from './app/upload/upload.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { UploadService } from './app/upload/upload.service';
 
     RekapAbsenModule,
     GeoLocationModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService, AuthService, AbsenGateway, DownloadService, UploadService],
