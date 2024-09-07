@@ -97,15 +97,18 @@ export class JadwalService extends BaseResponse {
         jadwal.jam_jadwal.map((jamJadwal) => {
           let jamDetail = null;
 
-          if ('kelas' in user) {
+          if ('kelas' in user && user.kelas) {
             // Siswa
             jamDetail = jamJadwal.jam_detail_jadwal.find(
               (detail) => detail.kelas.id === user.kelas.id,
             );
-          } else if ('subject_code_entity' in user) {
+          } else if (
+            'subject_code_entity' in user &&
+            user.subject_code_entity
+          ) {
             // Guru
-            jamDetail = jamJadwal.jam_detail_jadwal.find(
-              (detail) => detail.subject_code_entity.guru.id === user.id,
+            jamDetail = jamJadwal.jam_detail_jadwal.find((detail) =>
+              detail.subject_code_entity.guru.id === user.id
             );
           }
 
@@ -142,7 +145,8 @@ export class JadwalService extends BaseResponse {
         let isMasukKelas = false;
 
         // Check attendance status for the user
-        if ('kelas' in user) {
+        // Cek tipe user dengan cara yang lebih eksplisit
+        if ('kelas' in user  && user.kelas) {
           // Siswa
           const absenSiswa = await this.prisma.absen_siswa.findFirst({
             where: {
@@ -152,7 +156,7 @@ export class JadwalService extends BaseResponse {
           });
           isAbsen = !!absenSiswa;
           isMasukKelas = !!absenSiswa;
-        } else if ('subject_code_entity' in user) {
+        } else if ('subject_code_entity' in user && user.subject_code_entity) {
           // Guru
           const absenGuru = await this.prisma.absen_guru.findFirst({
             where: {
@@ -208,7 +212,7 @@ export class JadwalService extends BaseResponse {
         jamDetailId: nextSchedule.jamDetail.id,
         jam_mulai: nextSchedule.jamJadwal.jam_mulai,
         jam_selesai: nextSchedule.jamJadwal.jam_selesai,
-        mapel: nextSchedule.jamDetail.subject_code.mapel.nama_mapel,
+        mapel: nextSchedule.jamDetail.subject_code_entity.mapel.nama_mapel,
         kelas: nextSchedule.jamDetail.kelas.nama_kelas,
         is_absen: false,
         is_masuk_kelas: false,
@@ -291,7 +295,7 @@ export class JadwalService extends BaseResponse {
     await this.prisma.$transaction(async (prisma) => {
       // Periksa apakah Hari dan User ada
       const hari = await prisma.hari.findUnique({
-        where: { id:  Number(hari_id) },
+        where: { id: Number(hari_id) },
       });
       if (!hari) {
         throw new HttpException('Hari not found', HttpStatus.NOT_FOUND);
