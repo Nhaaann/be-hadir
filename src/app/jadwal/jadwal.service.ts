@@ -317,8 +317,6 @@ export class JadwalService extends BaseResponse {
         );
       }
 
-      
-
       const jadwal = await prisma.jadwal.create({
         data: {
           hariId: hari_id,
@@ -331,7 +329,7 @@ export class JadwalService extends BaseResponse {
               jam_detail: {
                 create: jam.jam_detail.map((detail) => ({
                   kelasId: detail.kelas,
-                  subjectCodeId: detail.subject_code,
+                  subjectCodeId: detail.subject_code
                 })),
               },
             })),

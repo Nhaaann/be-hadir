@@ -137,7 +137,7 @@ model jam_jadwal {
   id                Int                 @id(map: "pk_jam_jadwal") @default(autoincrement())
   is_rest           Boolean?            @default(false)
   jam_mulai         String              @db.VarChar
-  allSchedulesDone  Boolean             @default(false)
+  allSchedulesDone  Boolean?            @default(false)
   jam_selesai       String              @db.VarChar
   created_at        DateTime            @default(now()) @db.Timestamp(6)
   updated_at        DateTime            @default(now()) @db.Timestamp(6)
@@ -263,7 +263,6 @@ model guru_mapel_mapel {
   guru    guru  @relation(fields: [guruId], references: [id], onDelete: Cascade, map: "FK_guru_to_guru_mapel")
   mapel   mapel @relation(fields: [mapelId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_mapel_to_guru_mapel")
 
-  
   @@id([guruId, mapelId]) // Composite primary key
   @@map("guru_mapel_mapel") // Map to the table name for the join table
 }
