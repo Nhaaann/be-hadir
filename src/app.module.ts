@@ -29,6 +29,7 @@ import { AuthService } from './app/auth/auth.service';
 import { DownloadService } from './app/download/download.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PrismaModule } from './prisma/prisma.module';
+import { UploadService } from './app/upload/upload.service';
 
 @Module({
   imports: [
@@ -52,6 +53,6 @@ import { PrismaModule } from './prisma/prisma.module';
     GeoLocationModule,
   ],
   controllers: [AppController],
-  providers: [AppService, AuthService, AbsenGateway, DownloadService],
+  providers: [AppService, AuthService, AbsenGateway, DownloadService, UploadService],
 })
 export class AppModule {}

@@ -36,7 +36,3 @@ export function getTodayDayName(): string {
   const dayIndex = today.getDay();
   return daysOfWeek[dayIndex];
 }
-
-// Contoh penggunaan
-const todayDayName = getTodayDayName();
-console.log(todayDayName); // Output: 'Sabtu' (atau hari saat ini)
