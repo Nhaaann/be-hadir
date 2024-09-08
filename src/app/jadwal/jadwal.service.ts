@@ -496,7 +496,7 @@ export class JadwalService extends BaseResponse {
         currentTime >=
           new Date(`${currentDate}T${nextSchedule.jamJadwal.jam_mulai}`);
 
-      return this._success('Jam detail found successfully', {
+      return this._success('Jam detail found successfullyyy', {
         nama_user: guru.user.nama,
         jamDetailId: nextSchedule.jamDetail.id,
         jam_mulai: nextSchedule.jamJadwal.jam_mulai,
