@@ -27,8 +27,8 @@ import { Roles } from '../../utils/decorator/roles.decorator';
 import { Role } from '../auth/roles.enum';
 import { ResponseSuccess } from 'src/utils/interface/respone'; 
 import { AbsenGateway } from './absen.gateway';
-import { AbsenSiswaService } from './absen-siswa.service';
-import { AbsenGuruService } from './absen-guru.service';
+import { AbsenSiswaService } from './absen-siswa/absen-siswa.service';
+import { AbsenGuruService } from './absen-guru/absen-guru.service';
 
 @Controller('absen')
 export class AbsenController{

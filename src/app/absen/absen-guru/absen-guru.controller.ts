@@ -2,7 +2,7 @@ import { Controller, Get, HttpException, HttpStatus, Query, UseGuards } from '@n
 import { ResponseSuccess } from 'src/utils/interface/respone';
 
 import { JwtGuard } from 'src/app/auth/auth.guard';
-import { AbsenGuruService } from '../absen-guru.service';
+import { AbsenGuruService } from './absen-guru.service';
 
 @UseGuards(JwtGuard)
 @Controller('rekap-guru')

@@ -1,7 +1,7 @@
 import { Injectable, HttpException, HttpStatus, Inject } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CreateAbsenSiswaDto } from './absen.dto';
+import { CreateAbsenSiswaDto } from '../absen.dto';
 import { ResponseSuccess } from 'src/utils/interface/respone';
 import { map } from 'rxjs';
 import {
@@ -9,7 +9,7 @@ import {
   getMonthRange,
   getWeekRange,
 } from 'src/utils/helper function/getWeek';
-import { calculateDistance } from '../../utils/validator/location.validator';
+import { calculateDistance } from '../../../utils/validator/location.validator';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()

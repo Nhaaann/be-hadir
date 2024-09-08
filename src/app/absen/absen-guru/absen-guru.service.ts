@@ -6,9 +6,9 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { AbsenGateway } from './absen.gateway';
+import { AbsenGateway } from '../absen.gateway';
 import { REQUEST } from '@nestjs/core';
-import { CreateAbsenGuruDto } from './absen.dto';
+import { CreateAbsenGuruDto } from '../absen.dto';
 // import { ResponseSuccess } from '../../utils/interface/response';
 import {
   getMaxWeeksInMonth,
@@ -16,8 +16,8 @@ import {
   getWeekNumberInMonth,
   getWeekRange,
   indexToMonthName,
-} from '../../utils/helper function/getWeek';
-import { calculateDistance } from '../../utils/validator/location.validator';
+} from '../../../utils/helper function/getWeek';
+import { calculateDistance } from '../../../utils/validator/location.validator';
 
 @Injectable()
 export class AbsenGuruService {
