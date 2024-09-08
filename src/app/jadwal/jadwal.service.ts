@@ -450,7 +450,7 @@ export class JadwalService extends BaseResponse {
       isMulai = currentTime >= jamMulai && currentTime <= jamSelesai;
       isJadwalHabis = currentTime >= jamSelesai;
 
-      if (isMulai) {
+      // if (isMulai) {
         const absenGuru = await this.prisma.absen_guru.findFirst({
           where: {
             jam_detail_jadwal: { id: schedule.jamDetail.id },
@@ -483,7 +483,7 @@ export class JadwalService extends BaseResponse {
           is_jadwal_habis_hari_ini: isJadwalHabisHariIni,
         });
       }
-    }
+    // }
 
     if (todaysSchedules.length > 0) {
       const nextSchedule = todaysSchedules[0];
