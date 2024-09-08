@@ -27,33 +27,33 @@ export class AbsenSiswaService {
     } = createAbsenSiswaDto;
 
     // Get default location from geo_location table
-    const defaultLokasi = await this.prisma.geo_location.findUnique({
-      where: { id: 0 },
-    });
+    // const defaultLokasi = await this.prisma.geo_location.findUnique({
+    //   where: { id: 0 },
+    // });
 
-    if (!defaultLokasi) {
-      throw new HttpException(
-        'Default location not found',
-        HttpStatus.NOT_FOUND,
-      );
-    }
+    // if (!defaultLokasi) {
+    //   throw new HttpException(
+    //     'Default location not found',
+    //     HttpStatus.NOT_FOUND,
+    //   );
+    // }
 
-    const { latitude: defaultLatitude, longitude: defaultLongitude } =
-      defaultLokasi;
+    // const { latitude: defaultLatitude, longitude: defaultLongitude } =
+    //   defaultLokasi;
 
-    const distance = calculateDistance(
-      currentLatitude,
-      currentLongitude,
-      defaultLatitude,
-      defaultLongitude,
-    );
+    // const distance = calculateDistance(
+    //   currentLatitude,
+    //   currentLongitude,
+    //   defaultLatitude,
+    //   defaultLongitude,
+    // );
 
-    if (distance > 50) {
-      throw new HttpException(
-        'Anda tidak berada di lokasi yang tepat',
-        HttpStatus.FORBIDDEN,
-      );
-    }
+    // if (distance > 50) {
+    //   throw new HttpException(
+    //     'Anda tidak berada di lokasi yang tepat',
+    //     HttpStatus.FORBIDDEN,
+    //   );
+    // }
 
     // Fetch absenKelas
     const absenKelas = await this.prisma.absen_kelas.findFirst({
