@@ -105,12 +105,15 @@ export class AbsenSiswaService {
     const jamMulai = new Date(`${currentDate}T${jamJadwal.jam_mulai}`);
     const jamSelesai = new Date(`${currentDate}T${jamJadwal.jam_selesai}`);
 
-    if (currentTime < jamMulai || currentTime > jamSelesai) {
-      throw new HttpException(
-        'Anda tidak bisa absen karena belum waktunya',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+    console.log('current time:', currentTime);
+    console.log('jam mulai time:', jamMulai);
+
+    // if (currentTime < jamMulai || currentTime > jamSelesai) {
+    //   throw new HttpException(
+    //     'Anda tidak bisa absen karena belum waktunya',
+    //     HttpStatus.BAD_REQUEST,
+    //   );
+    // }
 
     let status = 'Hadir';
     const diffInMinutes = Math.floor(
