@@ -50,7 +50,11 @@ export class GuruService {
     const guru = await this.prisma.guru.create({
       data: {
         id: user.id,
-        initial_schedule,
+        initial_schedule: {
+          connect: {
+            schedule_name: initial_schedule
+          }
+        },
         user: { connect: { id: user.id } },
         mapel: {
           connect: mapelEntities.map((mapel) => ({ id: mapel.id })),
@@ -87,6 +91,7 @@ export class GuruService {
       include: {
         user: true,
         subject_code_entity: true, // Include subject codes
+        initial_schedule: true,
       },
     });
 
@@ -123,7 +128,7 @@ export class GuruService {
 
       // Create new subject codes based on updated mapel
       const subjectCodes = mapelEntities.map((subject, index) => ({
-        code: `${guru.initial_schedule}${index + 1}`,
+        code: `${guru.initial_schedule.schedule_name}${index + 1}`,
         guruId: id,
         mapelId: subject.id,
       }));
@@ -197,6 +202,7 @@ export class GuruService {
     const guruList = await this.prisma.guru.findMany({
       include: {
         user: true,
+        initial_schedule: true,
         subject_code_entity: {
           include: {
             mapel: true,
@@ -211,7 +217,7 @@ export class GuruService {
 
       return {
         id: guru.id,
-        initial_schedule: guru.initial_schedule,
+        initial_schedule: guru.initial_schedule.schedule_name,
         created_at: guru.created_at,
         updated_at: guru.updated_at,
         is_absen_today: guru.is_absen_today,
@@ -248,6 +254,7 @@ export class GuruService {
     const guruList = await this.prisma.guru.findMany({
       include: {
         user: true,
+        initial_schedule: true,
         subject_code_entity: {
           include: {
             mapel: true,
@@ -295,6 +302,7 @@ export class GuruService {
       where: { id },
       include: {
         user: true,
+        initial_schedule: true,
         subject_code_entity: {
           include: {
             mapel: true,
