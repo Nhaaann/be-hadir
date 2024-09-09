@@ -221,6 +221,7 @@ export class AbsenGuruService {
     const guru = await this.prisma.guru.findUnique({
       where: { id: user.id },
       include: {
+        initial_schedule: true,
         subject_code_entity: {
           include: { mapel: true },
         },
@@ -231,7 +232,7 @@ export class AbsenGuruService {
       id_mapel: subject.id,
       nama_mapel: subject.mapel.nama_mapel,
       status_mapel: subject.mapel.status_mapel,
-      subject_code: `${guru.initial_schedule}${index + 1}`,
+      subject_code: `${guru.initial_schedule.schedule_name}${index + 1}`,
     }));
 
     const monthName = indexToMonthName[parseInt(month, 10) - 1];
