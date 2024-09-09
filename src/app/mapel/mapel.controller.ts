@@ -5,6 +5,7 @@ import { CreateMapelDto, UpdateMapelDto } from './mapel.dto';
 import { ResponseSuccess } from 'src/utils/interface/respone'; 
 import { JwtGuard } from '../auth/auth.guard';
 import { InjectCreatedBy } from '../../utils/decorator/createByDecorator';
+import { PageRequestDto } from 'src/utils/dto/page.dto';
 
 @UseGuards(JwtGuard)
 @Controller('mapel')
@@ -22,8 +23,8 @@ export class MapelController {
   }
 
   @Get('list')
-  async findAll(): Promise<any> {
-    return this.mapelService.findAll();
+  async findAll(query: PageRequestDto): Promise<any> {
+    return this.mapelService.findAll(query);
   }
 
   @Put('update/:id')
