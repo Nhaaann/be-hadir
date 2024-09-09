@@ -16,6 +16,11 @@ export class MapelController {
     return this.mapelService.create(createMapelDto);
   }
 
+  @Post('create-bulk')
+  async createBulk(@Body() payload: { data: CreateMapelDto[] }) {
+    return await this.mapelService.createBulk(payload);
+  }
+
   @Get('list')
   async findAll(): Promise<any> {
     return this.mapelService.findAll();

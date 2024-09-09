@@ -31,7 +31,7 @@ export class MapelService {
     const mapel = await this.prisma.mapel.create({
       data: {
         ...createMapelDto,
-        created_by: this.req.user.id
+        created_by: this.req.user.id,
       },
     });
 
@@ -43,15 +43,25 @@ export class MapelService {
   }
 
   async createBulk(payload: { data: CreateMapelDto[] }) {
-    const { data } = payload; // Extract 'data' array from the payload
+    // Map the data to match Prisma's expected format
+    const prismaData = payload.data.map((item) => ({
+      nama_mapel: item.nama_mapel,
+      status_mapel: item.status_mapel,
+      created_by: this.req.user.id
+    }));
 
     return await this.prisma.mapel.createMany({
-      data,
+      data: prismaData,
+      skipDuplicates: true, // Optional: skips inserting duplicate entries
     });
   }
 
   async findAll(): Promise<any> {
-    const mapels = await this.prisma.mapel.findMany();
+    const mapels = await this.prisma.mapel.findMany({
+      orderBy: {
+        id: 'asc'
+      }
+    });
     return {
       status: 'Success',
       message: 'OKe',
@@ -72,7 +82,7 @@ export class MapelService {
       where: { id },
       data: {
         ...payload,
-        updated_by: this.req.user.id
+        updated_by: this.req.user.id,
       },
     });
 
