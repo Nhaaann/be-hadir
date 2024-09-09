@@ -42,6 +42,14 @@ export class MapelService {
     };
   }
 
+  async createBulk(payload: { data: CreateMapelDto[] }) {
+    const { data } = payload; // Extract 'data' array from the payload
+
+    return await this.prisma.mapel.createMany({
+      data,
+    });
+  }
+
   async findAll(): Promise<any> {
     const mapels = await this.prisma.mapel.findMany();
     return {

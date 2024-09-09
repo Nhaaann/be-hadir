@@ -282,12 +282,12 @@ export class GuruService {
         id_mapel: subject.mapel.id,
         nama_mapel: subject.mapel.nama_mapel,
         status_mapel: subject.mapel.status_mapel,
-        subject_code: `${initial_schedule}${index + 1}`,
+        subject_code: `${initial_schedule.schedule_name}${index + 1}`,
       }));
 
       return {
         id: guru.id,
-        initial_schedule: guru.initial_schedule,
+        initial_schedule: guru.initial_schedule.schedule_name,
         nama: guru.user.nama,
         email: guru.user.email,
         mapel: formattedMapelList,
