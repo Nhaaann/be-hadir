@@ -24,7 +24,7 @@ export class MapelController {
   }
 
   @Get('list')
-  async findAll(@Pagination() query: PageRequestDto): Promise<any> {
+  async findAll(@Pagination() query: any): Promise<any> {
     return this.mapelService.findAll(query);
   }
 

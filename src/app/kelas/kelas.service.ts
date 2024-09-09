@@ -1,16 +1,21 @@
 // src/app/kelas/kelas.service.ts
 
 import { Injectable, HttpException, HttpStatus, Inject } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service'; // Adjust import path as needed
+import { PrismaService } from '../../prisma/prisma.service'; // Adjust import path as needed
 import { BulkCreateKelasDto, CreateKelasDto } from './kelas.dto';
 import { REQUEST } from '@nestjs/core';
+import BaseResponse from 'src/utils/response/base.response';
+import { ResponsePagination } from 'src/utils/interface/respone';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
-export class KelasService {
+export class KelasService extends BaseResponse {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(REQUEST) private req: any,
-  ) {}
+  ) {
+    super();
+  }
 
   async create(createKelasDto: CreateKelasDto): Promise<any> {
     const { nama_kelas } = createKelasDto;
@@ -20,17 +25,14 @@ export class KelasService {
       where: { nama_kelas },
     });
     if (existingKelas) {
-      throw new HttpException(
-        'Class already exists',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new HttpException('Class already exists', HttpStatus.BAD_REQUEST);
     }
 
     // Create and save new class
     const hasil = await this.prisma.kelas.create({
       data: {
         nama_kelas,
-        created_by: this.req.user.id
+        created_by: this.req.user.id,
       },
     });
 
@@ -41,13 +43,42 @@ export class KelasService {
     };
   }
 
-  async findAll(): Promise<any> {
+  async findAll(query: any): Promise<ResponsePagination> {
+    const {
+      page = 1,
+      pageSize = 10,
+      limit,
+      nama_kelas,
+      sort_by = 'id',
+      order_by = 'asc',
+    } = query;
+
+    const filterQuery: Prisma.kelasWhereInput = {};
+
+    if (nama_kelas) {
+      filterQuery.nama_kelas = {
+        contains: nama_kelas,
+        mode: 'insensitive',
+      };
+    }
+
+    // Count total records
+    const total = await this.prisma.kelas.count({
+      where: filterQuery
+    });
+
+    // Fetch paginated data
     const kelasList = await this.prisma.kelas.findMany({
+      skip: limit,
+      take: pageSize,
+      orderBy: {
+        [sort_by]: order_by
+      },
+      where: filterQuery,
       include: {
         murid: {
           include: {
             user: true,
-            // kelas: true
           },
         },
       },
@@ -74,11 +105,7 @@ export class KelasService {
       })),
     }));
 
-    return {
-      status: 'Success',
-      message: 'List kelas',
-      data: response,
-    };
+    return this._pagination('Success', response, total, page, pageSize);
   }
 
   async findOneWithStudents(id: number): Promise<any> {
@@ -171,7 +198,7 @@ export class KelasService {
         const hasil = await this.prisma.kelas.create({
           data: {
             ...createKelasDto,
-            created_by: this.req.user.id
+            created_by: this.req.user.id,
           },
         });
         successes.push(hasil);

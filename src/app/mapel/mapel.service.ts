@@ -5,8 +5,10 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateMapelDto, UpdateMapelDto } from './mapel.dto';
 import { REQUEST } from '@nestjs/core';
 import { ResponsePagination } from 'src/utils/interface/respone';
-import BaseResponse from 'src/utils/response/base.response';
+import BaseResponse from '../../utils/response/base.response';
 import { PageRequestDto } from 'src/utils/dto/page.dto';
+import { filter } from 'rxjs';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class MapelService extends BaseResponse {
@@ -62,15 +64,36 @@ export class MapelService extends BaseResponse {
   }
 
   async findAll(query: any): Promise<ResponsePagination> {
-    const { page = 1, pageSize = 10, limit } = query;
-    console.log(page);
+    const {
+      page = 1,
+      pageSize = 10,
+      nama_mapel,
+      limit,
+      sort_by = 'id',
+      order_by = 'asc',
+    } = query;
+
+    
+
+    const filterQuery: Prisma.mapelWhereInput = {};
+
+    if (nama_mapel) {
+      filterQuery.nama_mapel = {
+        contains: nama_mapel,
+        mode: 'insensitive',
+      };
+    }
+
     // Count total records
-    const total = await this.prisma.mapel.count()
+    const total = await this.prisma.mapel.count({
+      where: filterQuery,
+    });
 
     // Fetch paginated data
     const mapels = await this.prisma.mapel.findMany({
+      where: filterQuery,
       orderBy: {
-        id: 'asc',
+        [sort_by]: order_by.toLowerCase(),
       },
       skip: limit,
       take: pageSize,
