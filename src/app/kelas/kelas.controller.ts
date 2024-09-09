@@ -16,6 +16,7 @@ import { ResponseSuccess } from 'src/utils/interface/respone';
 import { BulkCreateKelasDto, CreateKelasDto } from './kelas.dto';
 import { InjectCreatedBy } from '../../utils/decorator/createByDecorator';
 import { JwtGuard } from '../auth/auth.guard';
+import { Pagination } from 'src/utils/decorator/pagination.decorator';
 
 @UseGuards(JwtGuard)
 @Controller('kelas')
@@ -30,10 +31,9 @@ export class KelasController {
   }
 
   @Get('list')
-  async findAll(@Req() req): Promise<any> {
+  async findAll(@Pagination() query: any): Promise<any> {
     // const { id } = req.user;
-    console.log('req', req.user);
-    return this.kelasService.findAll();
+    return this.kelasService.findAll(query);
   }
 
   @Put('update/:id')
