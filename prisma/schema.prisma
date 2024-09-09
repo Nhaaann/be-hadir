@@ -72,12 +72,20 @@ model geo_location {
   updatedAt DateTime @default(now()) @db.Timestamp(6)
 }
 
+model initial_schedule {
+  id         Int      @id @default(autoincrement())
+  schedule_name   String   @unique // Ensure uniqueness
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  guru       guru[]
+}
+
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model guru {
   id                  Int                   @id(map: "pk_guru")
-  initial_schedule    String?
   created_at          DateTime              @default(now()) @db.Timestamp(6)
   updated_at          DateTime              @default(now()) @db.Timestamp(6)
+  initial_schedule_id Int
   is_absen_today      Boolean               @default(false)
   userId              Int?
   jadwal_detail_id    Int?
@@ -88,8 +96,9 @@ model guru {
   mapel               mapel[]
   rekap_absen         rekap_absen[]
   subject_code_entity subject_code_entity[]
-  // guru_mapel_mapel    guru_mapel_mapel[]
   guru_mapel_mapel    guru_mapel_mapel[]
+  initial_schedule    initial_schedule      @relation(fields: [initial_schedule_id], references: [id])
+  initial_jadwalId    Int?
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
