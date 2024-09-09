@@ -61,10 +61,11 @@ export class MapelService extends BaseResponse {
     });
   }
 
-  async findAll(query: PageRequestDto): Promise<ResponsePagination> {
-    const { page, pageSize, limit } = query;
+  async findAll(query: any): Promise<ResponsePagination> {
+    const { page = 1, pageSize = 10, limit } = query;
+    console.log(page);
     // Count total records
-    const total = await this.prisma.mapel.count();
+    const total = await this.prisma.mapel.count()
 
     // Fetch paginated data
     const mapels = await this.prisma.mapel.findMany({

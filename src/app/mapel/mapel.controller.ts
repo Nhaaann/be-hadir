@@ -6,6 +6,7 @@ import { ResponseSuccess } from 'src/utils/interface/respone';
 import { JwtGuard } from '../auth/auth.guard';
 import { InjectCreatedBy } from '../../utils/decorator/createByDecorator';
 import { PageRequestDto } from 'src/utils/dto/page.dto';
+import { Pagination } from 'src/utils/decorator/pagination.decorator';
 
 @UseGuards(JwtGuard)
 @Controller('mapel')
@@ -23,7 +24,7 @@ export class MapelController {
   }
 
   @Get('list')
-  async findAll(query: PageRequestDto): Promise<any> {
+  async findAll(@Pagination() query: PageRequestDto): Promise<any> {
     return this.mapelService.findAll(query);
   }
 
