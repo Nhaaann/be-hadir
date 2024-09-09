@@ -27,6 +27,27 @@ export class InitialScheduleService {
     };
   }
 
+  async getAvailableSchedules(): Promise<any> {
+    // Get all schedules that are not associated with any teacher
+    const availableSchedules = await this.prisma.initial_schedule.findMany({
+      where: {
+        guru: {
+          none: {},
+        },
+      },
+      select: {
+        schedule_name: true,
+      },
+    });
+  
+    return {
+      status: 'Success',
+      message: 'Available schedules fetched successfully',
+      data: availableSchedules,
+    };
+  }
+  
+
   async updateInitialSchedule(
     id: number,
     dto: any,

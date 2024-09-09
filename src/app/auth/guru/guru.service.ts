@@ -25,6 +25,18 @@ export class GuruService {
       throw new HttpException('User already exists', HttpStatus.BAD_REQUEST);
     }
 
+    const scheduleInUse = await this.prisma.guru.findFirst({
+      where: {
+        initial_schedule: {
+          schedule_name: initial_schedule
+        },
+      },
+    });
+  
+    if (scheduleInUse) {
+      throw new HttpException('Initial schedule is already in use by another teacher', HttpStatus.BAD_REQUEST);
+    }
+
     // Create and save user
     const hashedPassword = await hash(password, 12);
     const user = await this.prisma.user.create({

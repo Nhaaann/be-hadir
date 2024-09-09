@@ -12,9 +12,9 @@ export class InitialScheduleController {
     return this.initialScheduleService.createInitialSchedule();
   }
 
-  @Get()
+  @Get('list')
   async findAll() {
-    return this.initialScheduleService.getInitialSchedules();
+    return this.initialScheduleService.getAvailableSchedules();
   }
 
   @Put(':id')
