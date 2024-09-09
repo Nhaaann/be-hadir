@@ -4,13 +4,18 @@ import { Injectable, HttpException, HttpStatus, Inject } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateMapelDto, UpdateMapelDto } from './mapel.dto';
 import { REQUEST } from '@nestjs/core';
+import { ResponsePagination } from 'src/utils/interface/respone';
+import BaseResponse from 'src/utils/response/base.response';
+import { PageRequestDto } from 'src/utils/dto/page.dto';
 
 @Injectable()
-export class MapelService {
+export class MapelService extends BaseResponse {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(REQUEST) private req: any,
-  ) {}
+  ) {
+    super();
+  }
 
   async create(createMapelDto: CreateMapelDto): Promise<any> {
     const { nama_mapel } = createMapelDto;
@@ -47,7 +52,7 @@ export class MapelService {
     const prismaData = payload.data.map((item) => ({
       nama_mapel: item.nama_mapel,
       status_mapel: item.status_mapel,
-      created_by: this.req.user.id
+      created_by: this.req.user.id,
     }));
 
     return await this.prisma.mapel.createMany({
@@ -56,17 +61,20 @@ export class MapelService {
     });
   }
 
-  async findAll(): Promise<any> {
+  async findAll(query: PageRequestDto): Promise<ResponsePagination> {
+    const { page, pageSize, limit } = query;
+    // Count total records
+    const total = await this.prisma.mapel.count();
+
+    // Fetch paginated data
     const mapels = await this.prisma.mapel.findMany({
       orderBy: {
-        id: 'asc'
-      }
+        id: 'asc',
+      },
+      skip: limit,
+      take: pageSize,
     });
-    return {
-      status: 'Success',
-      message: 'OKe',
-      data: mapels,
-    };
+    return this._pagination('OKe', mapels, total, page, pageSize);
   }
 
   async update(id: number, payload: UpdateMapelDto): Promise<any> {
