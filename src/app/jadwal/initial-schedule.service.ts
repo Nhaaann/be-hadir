@@ -13,14 +13,36 @@ export class InitialScheduleService {
   async createInitialSchedule(dto: any): Promise<any> {
     const { schedule_name } = dto;
 
+    // Validate that the schedule_name is a single character A-Z
+    if (!/^[A-Z]$/.test(schedule_name)) {
+      throw new Error('Invalid schedule name. Must be a single uppercase letter from A to Z.');
+    }
+
+    // Check if the schedule already exists
+    const existingSchedule = await this.prisma.initial_schedule.findUnique({
+      where: { schedule_name },
+    });
+
+    if (existingSchedule) {
+      throw new Error('Schedule already exists.');
+    }
+
     // Create the initial schedule
     const createdSchedule = await this.prisma.initial_schedule.create({
       data: { schedule_name },
     });
 
+    // Add schedules from A to Z
+    const schedulesToCreate = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(char => ({ schedule_name: char }));
+
+    // Create multiple schedules at once
+    await this.prisma.initial_schedule.createMany({
+      data: schedulesToCreate
+    });
+
     return {
       status: 'Success',
-      message: 'Initial schedule created successfully',
+      message: 'Initial schedule created successfully and A-Z schedules added',
       data: createdSchedule,
     };
   }
