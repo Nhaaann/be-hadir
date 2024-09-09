@@ -7,9 +7,9 @@ import { InitialScheduleService } from './initial-schedule.service';
 export class InitialScheduleController {
   constructor(private readonly initialScheduleService: InitialScheduleService) {}
 
-  @Post()
-  async create(@Body() dto: any) {
-    return this.initialScheduleService.createInitialSchedule(dto);
+  @Post('create')
+  async create() {
+    return this.initialScheduleService.createInitialSchedule();
   }
 
   @Get()
