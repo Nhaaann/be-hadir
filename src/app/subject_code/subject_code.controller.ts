@@ -2,7 +2,7 @@
 import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import { SubjectCodeService } from './subject_code.service';
 // import { ResponseSuccess } from 'src/interface/respone';
-import { ResponseSuccess } from 'src/utils/interface/respone';
+import { ResponseSuccess } from '../../utils/interface/respone';
 import { JwtGuard } from '../auth/auth.guard';
 
 @UseGuards(JwtGuard)

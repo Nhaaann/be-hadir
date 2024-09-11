@@ -2,11 +2,11 @@
 import { Controller, Post, Body, Get, Param, Put, Delete, Query, UseGuards } from '@nestjs/common';
 import { MapelService } from './mapel.service';
 import { CreateMapelDto, UpdateMapelDto } from './mapel.dto';
-import { ResponseSuccess } from 'src/utils/interface/respone'; 
+import { ResponseSuccess } from '../../utils/interface/respone'; 
 import { JwtGuard } from '../auth/auth.guard';
 import { InjectCreatedBy } from '../../utils/decorator/createByDecorator';
-import { PageRequestDto } from 'src/utils/dto/page.dto';
-import { Pagination } from 'src/utils/decorator/pagination.decorator';
+import { PageRequestDto } from '../../utils/dto/page.dto';
+import { Pagination } from '../../utils/decorator/pagination.decorator';
 
 @UseGuards(JwtGuard)
 @Controller('mapel')

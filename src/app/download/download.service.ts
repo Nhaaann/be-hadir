@@ -5,8 +5,8 @@ import * as path from 'path';
 import * as os from 'os';
 import { Response } from 'express';
 import * as PDFKit from 'pdfkit'; // Perbaiki impor pdfkit
-import BaseResponse from 'src/utils/response/base.response';
-import { ResponseSuccess } from 'src/utils/interface/respone';
+import BaseResponse from '../../utils/response/base.response';
+import { ResponseSuccess } from '../../utils/interface/respone';
 
 @Injectable()
 export class DownloadService extends BaseResponse {

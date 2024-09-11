@@ -1,5 +1,5 @@
 import { Controller, Get, HttpException, HttpStatus, Query, UseGuards } from '@nestjs/common';
-import { ResponseSuccess } from 'src/utils/interface/respone';
+import { ResponseSuccess } from '../../../utils/interface/respone';
 
 import { JwtGuard } from 'src/app/auth/auth.guard';
 import { AbsenGuruService } from './absen-guru.service';

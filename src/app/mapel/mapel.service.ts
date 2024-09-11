@@ -4,9 +4,9 @@ import { Injectable, HttpException, HttpStatus, Inject } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateMapelDto, UpdateMapelDto } from './mapel.dto';
 import { REQUEST } from '@nestjs/core';
-import { ResponsePagination } from 'src/utils/interface/respone';
+import { ResponsePagination } from '../../utils/interface/respone';
 import BaseResponse from '../../utils/response/base.response';
-import { PageRequestDto } from 'src/utils/dto/page.dto';
+import { PageRequestDto } from '../../utils/dto/page.dto';
 import { filter } from 'rxjs';
 import { Prisma } from '@prisma/client';
 

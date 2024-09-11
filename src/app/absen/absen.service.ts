@@ -18,7 +18,7 @@ import {
 } from './absen.dto';
 // import { Jadwal } from '../jadwal/jadwal.entity';
 
-// import { ResponseSuccess } from 'src/utils/interface/respone';
+// import { ResponseSuccess } from '../../utils/interface/respone';
 // import { REQUEST } from '@nestjs/core';
 // import { User } from '../auth/auth.entity';
 // import { Role } from '../auth/roles.enum';

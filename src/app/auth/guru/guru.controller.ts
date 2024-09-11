@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { GuruService } from './guru.service';
 import { RegisterGuruDto, UpdateGuruDto } from './guru.dto';
-import { ResponseSuccess } from 'src/utils/interface/respone'; 
+import { ResponseSuccess } from '../../../utils/interface/respone'; 
 import { JwtGuard } from '../auth.guard';
 
 @Controller('guru')

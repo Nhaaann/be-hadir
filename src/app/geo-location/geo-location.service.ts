@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 // import { PrismaService } from '../prisma.service'; // Make sure this points to your Prisma service
 import { CreateGeoLocationDto } from './geo-location.dto';
-import { ResponseSuccess } from 'src/utils/interface/respone';
+import { ResponseSuccess } from '../../utils/interface/respone';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()

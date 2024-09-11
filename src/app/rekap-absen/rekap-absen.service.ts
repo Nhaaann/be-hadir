@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 // import { RekapAbsen } from './rekap-absen.entity';
 import { Between, MoreThanOrEqual, LessThanOrEqual, Repository } from 'typeorm';
 
-import { ResponseSuccess } from 'src/utils/interface/respone';
+import { ResponseSuccess } from '../../utils/interface/respone';
 
 @Injectable()
 export class RekapAbsenService{

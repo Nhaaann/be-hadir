@@ -9,7 +9,7 @@ import { hash } from 'bcrypt';
 import {
   ResponsePagination,
   ResponseSuccess,
-} from 'src/utils/interface/respone';
+} from '../../../utils/interface/respone';
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { REQUEST } from '@nestjs/core';

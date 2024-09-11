@@ -14,7 +14,7 @@ import { AuthService } from './auth.service';
 import { DeleteBulkUserDto, LoginDto, queryUSerDTO, RegisterDto, ResetPasswordDto } from './auth.dto';
 import { JwtAccessTokenStrategy } from './jwtAccessToken.strategy';
 import { JwtGuard, JwtGuardRefreshToken } from './auth.guard';
-import { ResponseSuccess } from 'src/utils/interface/respone'; 
+import { ResponseSuccess } from '../../utils/interface/respone'; 
 import { query } from 'express';
 import { Pagination } from '../../utils/decorator/pagination.decorator';
 import { RegisterGuruDto } from './guru/guru.dto';

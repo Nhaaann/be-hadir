@@ -2,7 +2,7 @@
 // src/app/hari/hari.service.ts
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service'; // Updated import path
-import { ResponseSuccess } from 'src/utils/interface/respone'; 
+import { ResponseSuccess } from '../../utils/interface/respone'; 
 
 @Injectable()
 export class HariService {

@@ -8,7 +8,7 @@ import {
   FindAllJadwalDTO,
   UpdateJadwalDto,
 } from './jadwal.dto';
-import { ResponseSuccess } from 'src/utils/interface/respone';
+import { ResponseSuccess } from '../../utils/interface/respone';
 import { REQUEST } from '@nestjs/core';
 import {
   getTodayDayName,

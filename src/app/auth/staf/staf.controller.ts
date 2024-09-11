@@ -12,8 +12,8 @@ import {
     Delete,
     Patch,
   } from '@nestjs/common';
-  import { ResponseSuccess } from 'src/utils/interface/respone';
-  import { Pagination } from 'src/utils/decorator/pagination.decorator';
+  import { ResponseSuccess } from '../../../utils/interface/respone';
+  import { Pagination } from '../../../utils/decorator/pagination.decorator';
   // import { StafService } from './staf.service';
   import {
     DeleteBulkStafDto,

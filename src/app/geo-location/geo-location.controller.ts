@@ -8,7 +8,7 @@ import {
   Put,
 } from '@nestjs/common';
 import { GeoLocationService } from './geo-location.service';
-import { ResponseSuccess } from 'src/utils/interface/respone'; 
+import { ResponseSuccess } from '../../utils/interface/respone'; 
 import { CreateGeoLocationDto } from './geo-location.dto';
 
 @Controller('geo-location')

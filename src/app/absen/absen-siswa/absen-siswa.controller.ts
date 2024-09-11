@@ -7,7 +7,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AbsenSiswaService } from './absen-siswa.service';
-import { ResponseSuccess } from 'src/utils/interface/respone';
+import { ResponseSuccess } from '../../../utils/interface/respone';
 import { JwtGuard } from 'src/app/auth/auth.guard';
 
 @UseGuards(JwtGuard)

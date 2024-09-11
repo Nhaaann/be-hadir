@@ -12,13 +12,13 @@ import {
   Delete,
   Patch,
 } from '@nestjs/common';
-import { ResponseSuccess } from 'src/utils/interface/respone'; 
+import { ResponseSuccess } from '../../../utils/interface/respone'; 
 import { query } from 'express';
-// import { Pagination } from '../../utils/decorator/pagination.decorator';
+// import { Pagination } from '../../../utils/decorator/pagination.decorator';
 import { SiswaService } from './siswa.service';
 import { DeleteBulkUserDto, RegisterBulkSiswaDto, RegisterSiswaDto, UpdateSiswaDto } from './siswa.dto';
 import { JwtGuard } from '../auth.guard';
-import { Pagination } from 'src/utils/decorator/pagination.decorator';
+import { Pagination } from '../../../utils/decorator/pagination.decorator';
 
 @Controller('siswa')
 export class SiswaController {

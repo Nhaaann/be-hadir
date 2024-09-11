@@ -12,11 +12,11 @@ import {
   Req,
 } from '@nestjs/common';
 import { KelasService } from './kelas.service';
-import { ResponseSuccess } from 'src/utils/interface/respone'; 
+import { ResponseSuccess } from '../../utils/interface/respone'; 
 import { BulkCreateKelasDto, CreateKelasDto } from './kelas.dto';
 import { InjectCreatedBy } from '../../utils/decorator/createByDecorator';
 import { JwtGuard } from '../auth/auth.guard';
-import { Pagination } from 'src/utils/decorator/pagination.decorator';
+import { Pagination } from '../../utils/decorator/pagination.decorator';
 
 @UseGuards(JwtGuard)
 @Controller('kelas')

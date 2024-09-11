@@ -4,8 +4,8 @@ import { Injectable, HttpException, HttpStatus, Inject } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service'; // Adjust import path as needed
 import { BulkCreateKelasDto, CreateKelasDto } from './kelas.dto';
 import { REQUEST } from '@nestjs/core';
-import BaseResponse from 'src/utils/response/base.response';
-import { ResponsePagination } from 'src/utils/interface/respone';
+import BaseResponse from '../../utils/response/base.response';
+import { ResponsePagination } from '../../utils/interface/respone';
 import { Prisma } from '@prisma/client';
 
 @Injectable()

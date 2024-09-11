@@ -25,7 +25,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Request, Response } from 'express';
 import { Roles } from '../../utils/decorator/roles.decorator';
 import { Role } from '../auth/roles.enum';
-import { ResponseSuccess } from 'src/utils/interface/respone'; 
+import { ResponseSuccess } from '../../utils/interface/respone'; 
 import { AbsenGateway } from './absen.gateway';
 import { AbsenSiswaService } from './absen-siswa/absen-siswa.service';
 import { AbsenGuruService } from './absen-guru/absen-guru.service';

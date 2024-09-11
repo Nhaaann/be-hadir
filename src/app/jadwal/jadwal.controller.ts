@@ -18,7 +18,7 @@ import {
   FindAllJadwalDTO,
   UpdateJadwalDto,
 } from './jadwal.dto';
-import { ResponseSuccess } from 'src/utils/interface/respone'; 
+import { ResponseSuccess } from '../../utils/interface/respone'; 
 import { JwtGuard } from '../auth/auth.guard';
 import { query } from 'express';
 import { Roles } from '../../utils/decorator/roles.decorator';

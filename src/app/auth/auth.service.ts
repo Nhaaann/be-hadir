@@ -12,7 +12,7 @@ import { Repository } from 'typeorm';
 import {
   ResponsePagination,
   ResponseSuccess,
-} from 'src/utils/interface/respone';
+} from '../../utils/interface/respone';
 import {
   DeleteBulkUserDto,
   LoginDto,
@@ -32,7 +32,7 @@ import { REQUEST } from '@nestjs/core';
 import { PrismaService } from 'src/prisma/prisma.service';
 import BaseResponse from '../../utils/response/base.response';
 import { Prisma, user_role_enum } from '@prisma/client';
-import { formatRole } from 'src/utils/helper function/formattedRole';
+import { formatRole } from '../../utils/helper function/formattedRole';
 
 @Injectable()
 export class AuthService extends BaseResponse {

@@ -13,7 +13,7 @@ import {
     UseInterceptors,
   } from '@nestjs/common';
   import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
-  import { ResponseSuccess } from 'src/utils/interface/respone';
+  import { ResponseSuccess } from '../../utils/interface/respone';
   import { JwtGuard } from '../auth/auth.guard';
   import { UploadService } from './upload.service';
 import cloudinary from 'src/config/cloudinary.config';

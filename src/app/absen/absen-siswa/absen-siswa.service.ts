@@ -2,13 +2,13 @@ import { Injectable, HttpException, HttpStatus, Inject } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateAbsenSiswaDto } from '../absen.dto';
-import { ResponseSuccess } from 'src/utils/interface/respone';
+import { ResponseSuccess } from '../../../utils/interface/respone';
 import { map } from 'rxjs';
 import {
   getMaxWeeksInMonth,
   getMonthRange,
   getWeekRange,
-} from 'src/utils/helper function/getWeek';
+} from '../../../utils/helper function/getWeek';
 import { calculateDistance } from '../../../utils/validator/location.validator';
 import { PrismaService } from 'src/prisma/prisma.service';
 
