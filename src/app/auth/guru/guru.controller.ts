@@ -14,6 +14,7 @@ import { GuruService } from './guru.service';
 import { RegisterGuruDto, UpdateGuruDto } from './guru.dto';
 import { ResponseSuccess } from '../../../utils/interface/respone'; 
 import { JwtGuard } from '../auth.guard';
+import { Pagination } from 'src/utils/decorator/pagination.decorator';
 
 @Controller('guru')
 export class GuruController {
@@ -51,13 +52,13 @@ export class GuruController {
 
   //   // Endpoint to get a list of all teachers
   @Get('list')
-  async getGuruList(): Promise<any> {
-    return this.guruService.getGuruList();
+  async getGuruList(@Pagination() query: any): Promise<any> {
+    return this.guruService.getGuruList(query);
   }
 
   @Get('list-subject')
-  async getGuruListSubject(): Promise<any> {
-    return this.guruService.getGuruListWithSubject();
+  async getGuruListSubject(@Pagination() query: any): Promise<any> {
+    return this.guruService.getGuruListWithSubject(query);
   }
 
   @UseGuards(JwtGuard)

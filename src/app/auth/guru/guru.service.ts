@@ -6,13 +6,16 @@ import { RegisterGuruDto, UpdateGuruDto, DeleteBulkGuruDto } from './guru.dto';
 import { Role } from '../roles.enum';
 import { hash } from 'bcrypt';
 import { REQUEST } from '@nestjs/core';
+import { ResponsePagination } from 'src/utils/interface/respone';
+import { Prisma } from '@prisma/client';
+import BaseResponse from 'src/utils/response/base.response';
 
 @Injectable()
-export class GuruService {
+export class GuruService extends BaseResponse {
   constructor(
     @Inject(REQUEST) private req: any,
     private readonly prisma: PrismaService,
-  ) {}
+  ) {super()}
 
   async registerGuru(registerGuruDto: RegisterGuruDto): Promise<any> {
     const { nama, email, password, mapel, initial_schedule } = registerGuruDto;
@@ -210,8 +213,36 @@ export class GuruService {
     };
   }
 
-  async getGuruList(): Promise<any> {
+  async getGuruList(query: any): Promise<ResponsePagination> {
+    const {
+      page = 1,
+      pageSize = 10,
+      limit,
+      sort_by = 'id',
+      order_by = 'asc',
+      nama,
+    } = query;
+  
+    const filterQuery: Prisma.guruWhereInput = {};
+  
+    // Add filtering by name if provided
+    if (nama) {
+      filterQuery.user = { nama: { contains: nama, mode: 'insensitive' } };
+    }
+  
+    // Count total records
+    const total = await this.prisma.guru.count({
+      where: filterQuery,
+    });
+  
+    // Fetch paginated data
     const guruList = await this.prisma.guru.findMany({
+      where: filterQuery,
+      skip: limit,
+      take: pageSize,
+      orderBy: {
+        [sort_by]: order_by.toLowerCase(),
+      },
       include: {
         user: true,
         initial_schedule: true,
@@ -222,11 +253,11 @@ export class GuruService {
         },
       },
     });
-
+  
     // Transform the data to match the desired format
     const transformedData = guruList.map((guru) => {
       const { user, subject_code_entity, ...rest } = guru;
-
+  
       return {
         id: guru.id,
         initial_schedule: guru.initial_schedule.schedule_name,
@@ -254,16 +285,26 @@ export class GuruService {
         })),
       };
     });
-
-    return {
-      status: 'success',
-      message: 'List of teachers retrieved successfully',
-      data: transformedData,
-    };
+  
+    return this._pagination('Success', transformedData, total, page, pageSize);
   }
 
-  async getGuruListWithSubject(): Promise<any> {
+  async getGuruListWithSubject(query: any): Promise<ResponsePagination> {
+    const {
+      page = 1,
+      pageSize = 10,
+      limit,
+      sort_by = 'id',
+      order_by = 'asc',
+    } = query;
+  
+    // Fetch paginated data
     const guruList = await this.prisma.guru.findMany({
+      skip: limit,
+      take: pageSize,
+      orderBy: {
+        [sort_by]: order_by.toLowerCase(),
+      },
       include: {
         user: true,
         initial_schedule: true,
@@ -274,17 +315,20 @@ export class GuruService {
         },
       },
     });
-
+  
+    // Count total records
+    const total = await this.prisma.guru.count();
+  
     const formattedGuruList = guruList.map((guru) => {
       const { initial_schedule, subject_code_entity } = guru;
-
+  
       const formattedMapelList = subject_code_entity.map((subject, index) => ({
         id_mapel: subject.mapel.id,
         nama_mapel: subject.mapel.nama_mapel,
         status_mapel: subject.mapel.status_mapel,
         subject_code: `${initial_schedule.schedule_name}${index + 1}`,
       }));
-
+  
       return {
         id: guru.id,
         initial_schedule: guru.initial_schedule.schedule_name,
@@ -295,20 +339,16 @@ export class GuruService {
         updated_at: guru.user.updated_at,
       };
     });
-
+  
     const hasil = formattedGuruList.sort((a, b) => {
       if (a.initial_schedule < b.initial_schedule) return -1;
       if (a.initial_schedule > b.initial_schedule) return 1;
       return 0;
     });
-
-    return {
-      status: 'Success',
-      message: 'OK',
-      data: hasil,
-    };
+  
+    return this._pagination('Success', hasil, total, page, pageSize);
   }
-
+  
   async getGuruDetailWithSubject(id: number): Promise<any> {
     const guru = await this.prisma.guru.findUnique({
       where: { id },
