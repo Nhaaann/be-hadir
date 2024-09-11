@@ -1,6 +1,13 @@
 // src/app/auth/auth.dto/staf.dto.ts
 import { Type } from 'class-transformer';
-import { IsNotEmpty, IsString, IsOptional, IsArray, ValidateNested, IsNumber } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+  IsNumber,
+} from 'class-validator';
 
 export class RegisterStafDto {
   @IsNotEmpty()
@@ -14,10 +21,6 @@ export class RegisterStafDto {
   @IsNotEmpty()
   @IsString()
   password: string; // Password user staf
-
-  @IsOptional()
-  @IsString()
-  jurnal_kegiatan?: string; // Jurnal kegiatan opsional untuk staf
 
   @IsOptional()
   @IsNumber()
@@ -38,10 +41,7 @@ export class DeleteBulkStafDto {
 }
 
 export class UpdateStafDto {
-  @IsOptional()
-  @IsString()
-  jurnal_kegiatan?: string; // Field opsional untuk memperbarui jurnal kegiatan staf
-
+  // Field opsional untuk memperbarui jurnal kegiatan staf
   @IsOptional()
   @IsNumber()
   userId?: number; // Field opsional untuk memperbarui referensi user

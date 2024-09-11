@@ -26,8 +26,8 @@ export class StafService extends BaseResponse {
     super();
   }
 
-  async updateStaf(id: number, updateStafDto: UpdateStafDto): Promise<any> {
-    const { jurnal_kegiatan, userId } = updateStafDto;
+  async updateStaf(id: number, updateStafDto: any): Promise<ResponseSuccess> {
+    const { nama, email, password } = updateStafDto;
 
     const staf = await this.prisma.staf.findUnique({
       where: { id },
@@ -42,8 +42,13 @@ export class StafService extends BaseResponse {
     const updatedStaf = await this.prisma.staf.update({
       where: { id },
       data: {
-        jurnal_kegiatan: jurnal_kegiatan ?? staf.jurnal_kegiatan,
-        userId: userId ?? staf.userId,
+        user: {
+          update: {
+            nama,
+            email,
+            password,
+          },
+        },
       },
       include: { user: true },
     });
@@ -55,7 +60,7 @@ export class StafService extends BaseResponse {
     };
   }
 
-  async deleteBulkStaf(payload: DeleteBulkStafDto): Promise<any> {
+  async deleteBulkStaf(payload: DeleteBulkStafDto): Promise<ResponseSuccess> {
     try {
       let berhasil = 0;
       let gagal = 0;
@@ -87,8 +92,8 @@ export class StafService extends BaseResponse {
     }
   }
 
-  async registerStaf(registerStafDto: RegisterStafDto): Promise<any> {
-    const { nama, email, password, jurnal_kegiatan, userId } = registerStafDto;
+  async registerStaf(registerStafDto: RegisterStafDto): Promise<ResponseSuccess> {
+    const { nama, email, password } = registerStafDto;
 
     // Check if user already exists
     const existingUser = await this.prisma.user.findUnique({
@@ -113,8 +118,9 @@ export class StafService extends BaseResponse {
     // Create and save staf with the same ID as the user
     const staf = await this.prisma.staf.create({
       data: {
-        userId: savedUser.id,
-        jurnal_kegiatan,
+        user: {
+          connect: { id: savedUser.id },
+        },
       },
     });
 
@@ -125,7 +131,7 @@ export class StafService extends BaseResponse {
     };
   }
 
-  async registerBulkStaf(payload: RegisterBulkStafDto): Promise<any> {
+  async registerBulkStaf(payload: RegisterBulkStafDto): Promise<ResponseSuccess> {
     let berhasil = 0;
     let gagal = 0;
 
@@ -176,7 +182,7 @@ export class StafService extends BaseResponse {
     return this._pagination('Success', data, total, page, pageSize);
   }
 
-  async getStafProfile(): Promise<any> {
+  async getStafProfile(): Promise<ResponseSuccess> {
     const staf = await this.prisma.staf.findUnique({
       where: { id: this.req.user.id },
       include: {
