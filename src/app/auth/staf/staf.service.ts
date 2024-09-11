@@ -92,7 +92,9 @@ export class StafService extends BaseResponse {
     }
   }
 
-  async registerStaf(registerStafDto: RegisterStafDto): Promise<ResponseSuccess> {
+  async registerStaf(
+    registerStafDto: RegisterStafDto,
+  ): Promise<ResponseSuccess> {
     const { nama, email, password } = registerStafDto;
 
     // Check if user already exists
@@ -130,7 +132,9 @@ export class StafService extends BaseResponse {
     };
   }
 
-  async registerBulkStaf(payload: RegisterBulkStafDto): Promise<ResponseSuccess> {
+  async registerBulkStaf(
+    payload: RegisterBulkStafDto,
+  ): Promise<ResponseSuccess> {
     let berhasil = 0;
     let gagal = 0;
 
@@ -168,6 +172,7 @@ export class StafService extends BaseResponse {
       where: filterQuery,
     });
     const data = await this.prisma.staf.findMany({
+      where: filterQuery,
       skip: limit,
       take: pageSize,
       orderBy: {
@@ -178,7 +183,18 @@ export class StafService extends BaseResponse {
       },
     });
 
-    return this._pagination('Success', data, total, page, pageSize);
+    const hasil = data.map((staf) => ({
+      id: staf.user.id,
+      avatar: staf.user.avatar,
+      nama: staf.user.nama,
+      nomor_hp: staf.user.nomor_hp,
+      email: staf.user.email,
+      role: staf.user.role,
+      created_at: staf.user.created_at,
+      updated_at: staf.user.updated_at,
+    }));
+
+    return this._pagination('Success', hasil, total, page, pageSize);
   }
 
   async getStafProfile(): Promise<ResponseSuccess> {
@@ -203,7 +219,6 @@ export class StafService extends BaseResponse {
       nomor_hp: staf.user.nomor_hp,
       email: staf.user.email,
       role: staf.user.role,
-      jurnal_kegiatan: staf.jurnal_kegiatan,
     };
 
     return {

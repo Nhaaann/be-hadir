@@ -171,7 +171,6 @@ model kelas {
   user_kelas_created_byTouser user?               @relation("kelas_created_byTouser", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_30ac19ced238e39a22cbc28e15a")
   user_kelas_updated_byTouser user?               @relation("kelas_updated_byTouser", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_cdb4c92038bc48a311e2e9c31ab")
   murid                       murid[]
-  user_user_kelasIdTokelas    user[]              @relation("user_kelasIdTokelas")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -248,7 +247,6 @@ model user {
   role                         user_role_enum
   created_at                   DateTime         @default(now()) @db.Timestamp(6)
   updated_at                   DateTime         @default(now()) @db.Timestamp(6)
-  kelasId                      Int?
   absen_kelas                  absen_kelas[]
   absen_siswa                  absen_siswa[]
   guru                         guru[]
@@ -262,7 +260,6 @@ model user {
   notifikasi                   notifikasi[]
   reset_password               reset_password[]
   staf                         staf[]
-  kelas_user_kelasIdTokelas    kelas?           @relation("user_kelasIdTokelas", fields: [kelasId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1bdb8d8cdba56955287d278a4f9")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
