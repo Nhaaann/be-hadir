@@ -256,26 +256,19 @@ export class GuruService extends BaseResponse {
   
     // Transform the data to match the desired format
     const transformedData = guruList.map((guru) => {
-      const { user, subject_code_entity, ...rest } = guru;
+      const { user, subject_code_entity } = guru;
   
       return {
         id: guru.id,
         initial_schedule: guru.initial_schedule.schedule_name,
-        created_at: guru.created_at,
-        updated_at: guru.updated_at,
         is_absen_today: guru.is_absen_today,
-        user: {
-          id: user.id,
-          avatar: user.avatar,
-          nama: user.nama,
-          nomor_hp: user.nomor_hp,
-          email: user.email,
-          password: user.password,
-          refresh_token: user.refresh_token,
-          role: user.role,
-          created_at: user.created_at,
-          updated_at: user.updated_at,
-        },
+        nama: user.nama,
+        nomor_hp: user.nomor_hp,
+        email: user.email,
+        role: user.role,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        avatar: user.avatar,
         mapel: subject_code_entity.map((subject) => ({
           id: subject.mapel.id,
           nama_mapel: subject.mapel.nama_mapel,
