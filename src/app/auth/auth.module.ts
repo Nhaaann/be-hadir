@@ -20,6 +20,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { PrismaModule } from 'src/prisma/prisma.module';
 // import { SubjectCodeEntity } from '../subject_code/subject_code.entity';
 import * as dotenv from 'dotenv';
+import { StafController } from './staf/staf.controller';
+import { StafService } from './staf/staf.service';
 dotenv.config();
 
 @Module({
@@ -34,13 +36,14 @@ dotenv.config();
     }),
     // MailModule,
   ],
-  controllers: [AuthController, SiswaController, GuruController],
+  controllers: [AuthController, SiswaController, GuruController, StafController],
   providers: [
     AuthService,
     JwtAccessTokenStrategy,
     JwtRefreshTokenStrategy,
     SiswaService,
-    GuruService
+    GuruService,
+    StafService
   ],
 })
 export class AuthModule {}
