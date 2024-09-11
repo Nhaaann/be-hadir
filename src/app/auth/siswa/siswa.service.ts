@@ -6,18 +6,25 @@ import {
 } from './siswa.dto';
 import { Role } from '../roles.enum';
 import { hash } from 'bcrypt';
-import { ResponseSuccess } from 'src/utils/interface/respone';
+import {
+  ResponsePagination,
+  ResponseSuccess,
+} from 'src/utils/interface/respone';
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { REQUEST } from '@nestjs/core';
+import { Prisma } from '@prisma/client';
+import BaseResponse from '../../../utils/response/base.response';
 // import { PrismaService } from 'src/prisma/prisma.service'; // Import PrismaService
 
 @Injectable()
-export class SiswaService {
+export class SiswaService extends BaseResponse {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(REQUEST) private req: any,
-  ) {}
+  ) {
+    super();
+  }
 
   async updateSiswa(id: number, updateSiswaDto: UpdateSiswaDto): Promise<any> {
     const { avatar, nomor_hp, alamat } = updateSiswaDto;
@@ -121,13 +128,13 @@ export class SiswaService {
       data: {
         user: {
           connect: {
-            id: savedUser.id
-          }
+            id: savedUser.id,
+          },
         },
         kelas: {
           connect: {
-            id: kelasExixts.id
-          }
+            id: kelasExixts.id,
+          },
         },
         NISN,
         tanggal_lahir,
@@ -160,19 +167,41 @@ export class SiswaService {
     };
   }
 
-  async getSiswaList(): Promise<any> {
-    const siswaList = await this.prisma.murid.findMany({
+  async getSiswaList(query: any): Promise<ResponsePagination> {
+    const {
+      page = 1,
+      pageSize = 10,
+      limit,
+      sort_by = 'id',
+      order_by = 'asc',
+      nama,
+    } = query;
+    const filterQuery: Prisma.muridWhereInput = {};
+
+    if (nama) {
+      filterQuery.user.nama = {
+        contains: nama,
+        mode: 'insensitive',
+      };
+    }
+
+    // Count total records
+    const total = await this.prisma.murid.count({
+      where: filterQuery,
+    });
+    const data = await this.prisma.murid.findMany({
+      skip: limit,
+      take: pageSize,
+      orderBy: {
+        [sort_by]: order_by,
+      },
       include: {
         user: true,
         kelas: true,
       },
     });
 
-    return {
-      status: 'Success',
-      message: 'OKe',
-      data: siswaList,
-    };
+    return this._pagination('Success', data, total, page, pageSize);
   }
 
   async getSiswaProfile(): Promise<any> {

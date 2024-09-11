@@ -33,7 +33,7 @@ export class KelasController {
   @Get('list')
   async findAll(@Pagination() query: any): Promise<any> {
     // const { id } = req.user;
-    return this.kelasService.findAll(query);
+      return this.kelasService.findAll(query);
   }
 
   @Put('update/:id')
