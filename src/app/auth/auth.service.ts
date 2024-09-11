@@ -9,7 +9,10 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 // import { User } from './auth.entity';
 import { Repository } from 'typeorm';
-import { ResponseSuccess } from 'src/utils/interface/respone';
+import {
+  ResponsePagination,
+  ResponseSuccess,
+} from 'src/utils/interface/respone';
 import {
   DeleteBulkUserDto,
   LoginDto,
@@ -27,61 +30,72 @@ import { randomBytes } from 'crypto';
 import { Role } from './roles.enum';
 import { REQUEST } from '@nestjs/core';
 import { PrismaService } from 'src/prisma/prisma.service';
+import BaseResponse from '../../utils/response/base.response';
+import { Prisma, user_role_enum } from '@prisma/client';
+import { formatRole } from 'src/utils/helper function/formattedRole';
 
 @Injectable()
-export class AuthService {
+export class AuthService extends BaseResponse {
   constructor(
     private readonly prisma: PrismaService,
     private jwtService: JwtService,
     // private mailService: MailService,
     @Inject(REQUEST) private req: any,
-  ) {}
+  ) {
+    super();
+  }
 
   async getUserId() {
     const userId = this.req.user.id;
     return userId;
   }
 
-  async getUsers(query: queryUSerDTO): Promise<any> {
-    const { role, page = 1, pageSize = 10, nama } = query;
+  async getUsers(query: any): Promise<ResponsePagination> {
+    const {
+      role,
+      page = 1,
+      pageSize = 10,
+      nama,
+      limit,
+      sort_by = 'id',
+      order_by = 'asc',
+    } = query;
 
-    // Build query parameters
-    const filter: any = {};
-    if (role) {
-      filter.role = { contains: role, mode: 'insensitive' }; // Case-insensitive search
+    const formattedRole = role ? (formatRole(role) as user_role_enum) : null;
+    const filter: Prisma.userWhereInput = {};
+
+    if (
+      formattedRole &&
+      !Object.values(user_role_enum).includes(formattedRole)
+    ) {
+      throw new HttpException(
+        `Role tidak valid. Gunakan role berikut: ${Object.values(
+          user_role_enum,
+        ).join(', ')}`, HttpStatus.BAD_REQUEST
+      );
     }
+
+    if (formattedRole) {
+      filter.role = formattedRole;
+    } 
 
     if (nama) {
-      filter.nama = { contains: nama, mode: 'insensitive' }; // Case-insensitive search
+      filter.nama = { contains: nama, mode: 'insensitive' };
     }
 
-    try {
-      // Fetch users with pagination
-      const users = await this.prisma.user.findMany({
-        where: filter,
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      });
+    const total = await this.prisma.user.count({ where: filter });
 
-      // Get the total count of users matching the filter
-      const totalCount = await this.prisma.user.count({ where: filter });
+    const users = await this.prisma.user.findMany({
+      where: filter,
+      skip: limit,
+      take: pageSize,
+      orderBy: {
+        [sort_by]: order_by.toLowerCase() as 'asc' | 'desc',
+      },
+    });
 
-      return {
-        success: 'Succeess',
-        message: `Daftar Pengguna, Jumlah User: ${totalCount}`,
-        data: users,
-      };
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      return {
-        // success: false,
-        message: 'Error fetching users',
-        data: [],
-      };
-    }
+    return this._pagination('Success', users, total, page, pageSize);
   }
-
-  
 
   async register(payload: RegisterDto): Promise<any> {
     // Check if user already exists

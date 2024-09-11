@@ -31,7 +31,7 @@ export class AuthController {
 
   // @UseGuards(JwtGuard)
   @Get('user-list')
-  async getUsers(@Pagination() query: queryUSerDTO) {
+  async getUsers(@Pagination() query: any) {
     return this.authService.getUsers(query);
   }
 

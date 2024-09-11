@@ -179,10 +179,7 @@ export class SiswaService extends BaseResponse {
     const filterQuery: Prisma.muridWhereInput = {};
 
     if (nama) {
-      filterQuery.user.nama = {
-        contains: nama,
-        mode: 'insensitive',
-      };
+      
     }
 
     // Count total records
@@ -193,7 +190,7 @@ export class SiswaService extends BaseResponse {
       skip: limit,
       take: pageSize,
       orderBy: {
-        [sort_by]: order_by,
+        [sort_by]: order_by.toLowerCase(),
       },
       include: {
         user: true,
