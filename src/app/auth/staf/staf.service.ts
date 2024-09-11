@@ -102,6 +102,7 @@ export class StafService extends BaseResponse {
     const hashedPassword = await hash(password, 12);
     const savedUser = await this.prisma.user.create({
       data: {
+        id: existingUser.id,
         nama,
         email,
         password: hashedPassword,
