@@ -18,6 +18,7 @@ import { query } from 'express';
 import { SiswaService } from './siswa.service';
 import { DeleteBulkUserDto, RegisterBulkSiswaDto, RegisterSiswaDto, UpdateSiswaDto } from './siswa.dto';
 import { JwtGuard } from '../auth.guard';
+import { Pagination } from 'src/utils/decorator/pagination.decorator';
 
 @Controller('siswa')
 export class SiswaController {
@@ -34,8 +35,8 @@ export class SiswaController {
   }
 
   @Get('list')
-  async getSiswaList() {
-    return this.siswaService.getSiswaList();
+  async getSiswaList(@Pagination() query: any) {
+    return this.siswaService.getSiswaList(query);
   }
 
   @UseGuards(JwtGuard)
