@@ -107,7 +107,6 @@ export class StafService extends BaseResponse {
     const hashedPassword = await hash(password, 12);
     const savedUser = await this.prisma.user.create({
       data: {
-        id: existingUser.id,
         nama,
         email,
         password: hashedPassword,
@@ -169,7 +168,7 @@ export class StafService extends BaseResponse {
       where: filterQuery,
     });
     const data = await this.prisma.staf.findMany({
-      skip: (page - 1) * pageSize,
+      skip: limit,
       take: pageSize,
       orderBy: {
         [sort_by]: order_by.toLowerCase(),
