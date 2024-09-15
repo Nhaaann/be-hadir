@@ -6,9 +6,9 @@ import { RegisterGuruDto, UpdateGuruDto, DeleteBulkGuruDto } from './guru.dto';
 import { Role } from '../roles.enum';
 import { hash } from 'bcrypt';
 import { REQUEST } from '@nestjs/core';
-import { ResponsePagination } from 'src/utils/interface/respone';
+import { ResponsePagination } from '../../../utils/interface/respone';
 import { Prisma } from '@prisma/client';
-import BaseResponse from 'src/utils/response/base.response';
+import BaseResponse from '../../../utils/response/base.response';
 
 @Injectable()
 export class GuruService extends BaseResponse {
@@ -277,9 +277,9 @@ export class GuruService extends BaseResponse {
           updated_at: subject.mapel.updated_at,
         })),
       };
-    });
+    })  
   
-    return this._pagination('Success', transformedData, total, page, pageSize);
+    return this._pagination(`Berhasil, jumlah data ${total}`, transformedData, total, page, pageSize);
   }
 
   async getGuruListWithSubject(query: any): Promise<ResponsePagination> {
@@ -293,7 +293,7 @@ export class GuruService extends BaseResponse {
   
     // Fetch paginated data
     const guruList = await this.prisma.guru.findMany({
-      skip: limit,
+      skip: (page - 1) * pageSize,
       take: pageSize,
       orderBy: {
         [sort_by]: order_by.toLowerCase(),

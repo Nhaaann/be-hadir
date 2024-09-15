@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { GuruService } from './guru.service';
 import { RegisterGuruDto, UpdateGuruDto } from './guru.dto';
-import { ResponseSuccess } from '../../../utils/interface/respone'; 
+import { ResponsePagination, ResponseSuccess } from '../../../utils/interface/respone'; 
 import { JwtGuard } from '../auth.guard';
 import { Pagination } from 'src/utils/decorator/pagination.decorator';
 
@@ -57,7 +57,7 @@ export class GuruController {
   }
 
   @Get('list-subject')
-  async getGuruListSubject(@Pagination() query: any): Promise<any> {
+  async getGuruListSubject(@Pagination() query: any): Promise<ResponsePagination> {
     return this.guruService.getGuruListWithSubject(query);
   }
 
