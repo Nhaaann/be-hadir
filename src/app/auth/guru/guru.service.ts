@@ -338,8 +338,8 @@ export class GuruService extends BaseResponse {
     // Tambahkan filter initial schedule jika tersedia
     if (initial_subject) {
       filterQuery.AND.push({
-        initial_schedule: {
-          schedule_name: {
+        subject_code_entity: {
+          code: {
             contains: initial_subject, // Melakukan pencarian berdasarkan initial schedule
             mode: 'insensitive', // Non-case-sensitive
           },
