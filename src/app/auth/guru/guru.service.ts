@@ -15,7 +15,9 @@ export class GuruService extends BaseResponse {
   constructor(
     @Inject(REQUEST) private req: any,
     private readonly prisma: PrismaService,
-  ) {super()}
+  ) {
+    super();
+  }
 
   async registerGuru(registerGuruDto: RegisterGuruDto): Promise<any> {
     const { nama, email, password, mapel, initial_schedule } = registerGuruDto;
@@ -31,13 +33,16 @@ export class GuruService extends BaseResponse {
     const scheduleInUse = await this.prisma.guru.findFirst({
       where: {
         initial_schedule: {
-          schedule_name: initial_schedule
+          schedule_name: initial_schedule,
         },
       },
     });
-  
+
     if (scheduleInUse) {
-      throw new HttpException('Initial schedule is already in use by another teacher', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Initial schedule is already in use by another teacher',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     // Create and save user
@@ -67,8 +72,8 @@ export class GuruService extends BaseResponse {
         id: user.id,
         initial_schedule: {
           connect: {
-            schedule_name: initial_schedule
-          }
+            schedule_name: initial_schedule,
+          },
         },
         user: { connect: { id: user.id } },
         mapel: {
@@ -222,19 +227,19 @@ export class GuruService extends BaseResponse {
       order_by = 'asc',
       nama,
     } = query;
-  
+
     const filterQuery: Prisma.guruWhereInput = {};
-  
+
     // Add filtering by name if provided
     if (nama) {
       filterQuery.user = { nama: { contains: nama, mode: 'insensitive' } };
     }
-  
+
     // Count total records
     const total = await this.prisma.guru.count({
       where: filterQuery,
     });
-  
+
     // Fetch paginated data
     const guruList = await this.prisma.guru.findMany({
       where: filterQuery,
@@ -253,11 +258,11 @@ export class GuruService extends BaseResponse {
         },
       },
     });
-  
+
     // Transform the data to match the desired format
     const transformedData = guruList.map((guru) => {
       const { user, subject_code_entity } = guru;
-  
+
       return {
         id: guru.id,
         initial_schedule: guru.initial_schedule.schedule_name,
@@ -277,9 +282,15 @@ export class GuruService extends BaseResponse {
           updated_at: subject.mapel.updated_at,
         })),
       };
-    })  
-  
-    return this._pagination(`Berhasil, jumlah data ${total}`, transformedData, total, page, pageSize);
+    });
+
+    return this._pagination(
+      `Berhasil, jumlah data ${total}`,
+      transformedData,
+      total,
+      page,
+      pageSize,
+    );
   }
 
   async getGuruListWithSubject(query: any): Promise<ResponsePagination> {
@@ -290,7 +301,7 @@ export class GuruService extends BaseResponse {
       sort_by = 'id',
       order_by = 'asc',
     } = query;
-  
+
     // Fetch paginated data
     const guruList = await this.prisma.guru.findMany({
       skip: (page - 1) * pageSize,
@@ -308,21 +319,29 @@ export class GuruService extends BaseResponse {
         },
       },
     });
-  
+
     const total = await this.prisma.guru.count();
 
     const total_page = Math.ceil(total / pageSize);
-  
+
+    const current_data = await this.prisma.guru.count({
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      orderBy: {
+        [sort_by]: order_by.toLowerCase(),
+      },
+    });
+
     const formattedGuruList = guruList.map((guru) => {
       const { initial_schedule, subject_code_entity } = guru;
-  
+
       const formattedMapelList = subject_code_entity.map((subject, index) => ({
         id_mapel: subject.mapel.id,
         nama_mapel: subject.mapel.nama_mapel,
         status_mapel: subject.mapel.status_mapel,
         subject_code: `${initial_schedule.schedule_name}${index + 1}`,
       }));
-  
+
       return {
         id: guru.id,
         initial_schedule: guru.initial_schedule.schedule_name,
@@ -333,16 +352,24 @@ export class GuruService extends BaseResponse {
         updated_at: guru.user.updated_at,
       };
     });
-  
+
     const hasil = formattedGuruList.sort((a, b) => {
       if (a.initial_schedule < b.initial_schedule) return -1;
       if (a.initial_schedule > b.initial_schedule) return 1;
       return 0;
     });
-  
-    return this._pagination('Success', hasil, total, page, pageSize, total_page);
+
+    return this._pagination(
+      'Success',
+      hasil,
+      total,
+      page,
+      pageSize,
+      total_page,
+      current_data
+    );
   }
-  
+
   async getGuruDetailWithSubject(id: number): Promise<any> {
     const guru = await this.prisma.guru.findUnique({
       where: { id },

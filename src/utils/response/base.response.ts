@@ -18,6 +18,7 @@ class BaseResponse {
     page: number,
     pageSize: number,
     total_page?: number,
+    current_data?: number,
   ): ResponsePagination {
     return {
       status: 'succes',
@@ -27,7 +28,8 @@ class BaseResponse {
         total: totalData,
         page: page,
         pageSize: pageSize,
-        total_page: total_page || 0x``,
+        total_page: total_page || 0,
+        current_data: current_data || 0,
       },
     };
   }
