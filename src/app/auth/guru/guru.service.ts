@@ -297,10 +297,55 @@ export class GuruService extends BaseResponse {
     const {
       page = 1,
       pageSize = 10,
-      limit,
       sort_by = 'id',
+      nama,
+      nama_mapel, // filter untuk nama mapel
+      initial_subject, // filter untuk initial schedule
       order_by = 'asc',
     } = query;
+
+    const filterQuery: any = {
+      AND: [],
+    };
+    if (nama) {
+      filterQuery.AND.push({
+        user: {
+          nama: {
+            contains: nama, // Melakukan pencarian berdasarkan nama guru
+            mode: 'insensitive', // Non-case-sensitive
+          },
+        },
+      });
+    }
+
+
+    // Tambahkan filter nama mapel jika tersedia
+    if (nama_mapel) {
+      filterQuery.AND.push({
+        subject_code_entity: {
+          some: {
+            mapel: {
+              nama_mapel: {
+                contains: nama_mapel, // Melakukan pencarian berdasarkan nama mapel
+                mode: 'insensitive', // Non-case-sensitive
+              },
+            },
+          },
+        },
+      });
+    }
+
+    // Tambahkan filter initial schedule jika tersedia
+    if (initial_subject) {
+      filterQuery.AND.push({
+        initial_schedule: {
+          schedule_name: {
+            contains: initial_subject, // Melakukan pencarian berdasarkan initial schedule
+            mode: 'insensitive', // Non-case-sensitive
+          },
+        },
+      });
+    }
 
     // Fetch paginated data
     const guruList = await this.prisma.guru.findMany({
@@ -309,6 +354,7 @@ export class GuruService extends BaseResponse {
       orderBy: {
         [sort_by]: order_by.toLowerCase(),
       },
+      where: filterQuery,
       include: {
         user: true,
         initial_schedule: true,
@@ -327,6 +373,7 @@ export class GuruService extends BaseResponse {
     const current_data = await this.prisma.guru.count({
       skip: (page - 1) * pageSize,
       take: pageSize,
+      where: filterQuery,
       orderBy: {
         [sort_by]: order_by.toLowerCase(),
       },
