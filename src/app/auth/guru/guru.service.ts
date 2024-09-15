@@ -309,8 +309,9 @@ export class GuruService extends BaseResponse {
       },
     });
   
-    // Count total records
     const total = await this.prisma.guru.count();
+
+    const total_page = Math.ceil(total / pageSize);
   
     const formattedGuruList = guruList.map((guru) => {
       const { initial_schedule, subject_code_entity } = guru;
@@ -339,7 +340,7 @@ export class GuruService extends BaseResponse {
       return 0;
     });
   
-    return this._pagination('Success', hasil, total, page, pageSize);
+    return this._pagination('Success', hasil, total, page, pageSize, total_page);
   }
   
   async getGuruDetailWithSubject(id: number): Promise<any> {
