@@ -28,8 +28,8 @@ class BaseResponse {
         total: totalData,
         page: page,
         pageSize: pageSize,
-        total_page: total_page || 0,
-        current_data: current_data || 0,
+        total_page: total_page,
+        current_data: current_data,
       },
     };
   }
