@@ -299,8 +299,8 @@ export class GuruService extends BaseResponse {
       pageSize = 10,
       sort_by = 'id',
       nama,
-      nama_mapel, // filter untuk nama mapel
-      initial_subject, // filter untuk initial schedule
+      nama_mapel,
+      initial_subject,
       order_by = 'asc',
     } = query;
 
@@ -311,22 +311,21 @@ export class GuruService extends BaseResponse {
       filterQuery.AND.push({
         user: {
           nama: {
-            contains: nama, // Melakukan pencarian berdasarkan nama guru
-            mode: 'insensitive', // Non-case-sensitive
+            contains: nama,
+            mode: 'insensitive',
           },
         },
       });
     }
 
-    // Tambahkan filter nama mapel jika tersedia
     if (nama_mapel) {
       filterQuery.AND.push({
         subject_code_entity: {
           some: {
             mapel: {
               nama_mapel: {
-                contains: nama_mapel, // Melakukan pencarian berdasarkan nama mapel
-                mode: 'insensitive', // Non-case-sensitive
+                contains: nama_mapel,
+                mode: 'insensitive',
               },
             },
           },
@@ -334,14 +333,13 @@ export class GuruService extends BaseResponse {
       });
     }
 
-    // Tambahkan filter initial schedule jika tersedia
     if (initial_subject) {
       filterQuery.AND.push({
         subject_code_entity: {
           some: {
             code: {
-              contains: initial_subject, // Melakukan pencarian berdasarkan initial schedule
-              mode: 'insensitive', // Non-case-sensitive
+              contains: initial_subject.toUpperCase(), // Ensure the search is case-insensitive
+              mode: 'insensitive',
             },
           },
         },
@@ -367,7 +365,8 @@ export class GuruService extends BaseResponse {
       },
     });
 
-    const total = await this.prisma.guru.count();
+    // Count total records
+    const total = await this.prisma.guru.count({ where: filterQuery });
 
     const total_page = Math.ceil(total / pageSize);
 
@@ -380,22 +379,28 @@ export class GuruService extends BaseResponse {
       },
     });
 
+    // Format guru list
     const formattedGuruList = guruList.map((guru) => {
       const { initial_schedule, subject_code_entity } = guru;
 
-      const formattedMapelList = subject_code_entity.map((subject, index) => ({
-        id_mapel: subject.mapel.id,
-        nama_mapel: subject.mapel.nama_mapel,
-        status_mapel: subject.mapel.status_mapel,
-        subject_code: `${initial_schedule.schedule_name}${index + 1}`,
-      }));
+      // Filter subject_code_entity by initial_subject
+      const filteredMapelList = subject_code_entity
+        .filter((subject) =>
+          subject.code.toUpperCase().includes(initial_subject.toUpperCase()),
+        )
+        .map((subject, index) => ({
+          id_mapel: subject.mapel.id,
+          nama_mapel: subject.mapel.nama_mapel,
+          status_mapel: subject.mapel.status_mapel,
+          subject_code: `${initial_schedule.schedule_name}${index + 1}`,
+        }));
 
       return {
         id: guru.id,
         initial_schedule: guru.initial_schedule.schedule_name,
         nama: guru.user.nama,
         email: guru.user.email,
-        mapel: formattedMapelList,
+        mapel: filteredMapelList,
         created_at: guru.user.created_at,
         updated_at: guru.user.updated_at,
       };
