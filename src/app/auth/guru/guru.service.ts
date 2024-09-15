@@ -318,7 +318,6 @@ export class GuruService extends BaseResponse {
       });
     }
 
-
     // Tambahkan filter nama mapel jika tersedia
     if (nama_mapel) {
       filterQuery.AND.push({
@@ -339,9 +338,11 @@ export class GuruService extends BaseResponse {
     if (initial_subject) {
       filterQuery.AND.push({
         subject_code_entity: {
-          code: {
-            contains: initial_subject, // Melakukan pencarian berdasarkan initial schedule
-            mode: 'insensitive', // Non-case-sensitive
+          some: {
+            code: {
+              contains: initial_subject, // Melakukan pencarian berdasarkan initial schedule
+              mode: 'insensitive', // Non-case-sensitive
+            },
           },
         },
       });
@@ -413,7 +414,7 @@ export class GuruService extends BaseResponse {
       page,
       pageSize,
       total_page,
-      current_data
+      current_data,
     );
   }
 
