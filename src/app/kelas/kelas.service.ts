@@ -69,7 +69,7 @@ export class KelasService extends BaseResponse {
 
     // Fetch paginated data
     const kelasList = await this.prisma.kelas.findMany({
-      skip: limit,
+      skip: (page - 1) * pageSize,
       take: pageSize,
       orderBy: {
         [sort_by]: order_by

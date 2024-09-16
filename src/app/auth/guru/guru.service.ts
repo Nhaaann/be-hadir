@@ -243,7 +243,7 @@ export class GuruService extends BaseResponse {
     // Fetch paginated data
     const guruList = await this.prisma.guru.findMany({
       where: filterQuery,
-      skip: limit,
+      skip: (page - 1) * pageSize,
       take: pageSize,
       orderBy: {
         [sort_by]: order_by.toLowerCase(),

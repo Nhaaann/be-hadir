@@ -87,7 +87,7 @@ export class AuthService extends BaseResponse {
 
     const users = await this.prisma.user.findMany({
       where: filter,
-      skip: limit,
+      skip: (page - 1) * pageSize,
       take: pageSize,
       orderBy: {
         [sort_by]: order_by.toLowerCase() as 'asc' | 'desc',

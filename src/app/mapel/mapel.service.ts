@@ -95,7 +95,7 @@ export class MapelService extends BaseResponse {
       orderBy: {
         [sort_by]: order_by.toLowerCase(),
       },
-      skip: limit,
+      skip: (page - 1) * pageSize,
       take: pageSize,
     });
     return this._pagination('OKe', mapels, total, page, pageSize);

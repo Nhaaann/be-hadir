@@ -187,7 +187,7 @@ export class SiswaService extends BaseResponse {
       where: filterQuery,
     });
     const data = await this.prisma.murid.findMany({
-      skip: limit,
+      skip: (page - 1) * pageSize,
       take: pageSize,
       orderBy: {
         [sort_by]: order_by.toLowerCase(),

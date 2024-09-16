@@ -173,7 +173,7 @@ export class StafService extends BaseResponse {
     });
     const data = await this.prisma.staf.findMany({
       where: filterQuery,
-      skip: limit,
+      skip: (page - 1) * pageSize,
       take: pageSize,
       orderBy: {
         [sort_by]: order_by.toLowerCase(),
