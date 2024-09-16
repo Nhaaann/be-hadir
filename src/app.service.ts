@@ -238,7 +238,7 @@ export class AppService {
     const currentDate = currentTime.toISOString().split('T')[0];
     const currentDay = new Intl.DateTimeFormat('id-ID', {
       weekday: 'long',
-    }).format(currentTime);
+    }).format(currentTime)
 
     console.log(`Current Time: ${currentTime}, Current Day: ${currentDay}`);
 
