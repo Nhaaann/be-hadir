@@ -108,6 +108,8 @@ export class SiswaService extends BaseResponse {
     const hashedPassword = await hash(password, 12);
     const savedUser = await this.prisma.user.create({
       data: {
+        avatar:
+          'https://res.cloudinary.com/dcthljxbl/image/upload/v1726458751/zzimvbhgfs0jnp76oow8.svg',
         nama,
         email,
         password: hashedPassword,

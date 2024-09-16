@@ -51,6 +51,8 @@ export class GuruService extends BaseResponse {
       data: {
         nama,
         email,
+        avatar:
+          'https://res.cloudinary.com/dcthljxbl/image/upload/v1726458751/zzimvbhgfs0jnp76oow8.svg',
         password: hashedPassword,
         role: Role.GURU, // Ensure the role is correctly set
       },
@@ -75,7 +77,11 @@ export class GuruService extends BaseResponse {
             schedule_name: initial_schedule,
           },
         },
-        user: { connect: { id: user.id } },
+        user: {
+          connect: {
+            id: user.id,
+          },
+        },
         mapel: {
           connect: mapelEntities.map((mapel) => ({ id: mapel.id })),
         },
