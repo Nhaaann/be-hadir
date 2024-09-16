@@ -52,7 +52,7 @@ export class GuruService extends BaseResponse {
         nama,
         email,
         avatar:
-          'https://res.cloudinary.com/dcthljxbl/image/upload/v1726458751/zzimvbhgfs0jnp76oow8.svg',
+          'https://res.cloudinary.com/dcthljxbl/image/upload/v1726458751/defaultProfile.svg',
         password: hashedPassword,
         role: Role.GURU, // Ensure the role is correctly set
       },

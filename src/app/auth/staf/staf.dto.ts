@@ -7,6 +7,7 @@ import {
   IsArray,
   ValidateNested,
   IsNumber,
+  IsEmail,
 } from 'class-validator';
 
 export class RegisterStafDto {
@@ -15,8 +16,12 @@ export class RegisterStafDto {
   nama: string; // Nama user staf
 
   @IsNotEmpty()
-  @IsString()
+  @IsEmail()
   email: string; // Email user staf
+
+  @IsNotEmpty()
+  @IsString()
+  alamat: string; // Email user staf
 
   @IsNotEmpty()
   @IsString()
