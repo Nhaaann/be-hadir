@@ -52,50 +52,45 @@ export class AuthService extends BaseResponse {
 
   async getUsers(query: any): Promise<ResponsePagination> {
     const {
-      role,
-      page = 1,
-      pageSize = 10,
-      nama,
-      limit,
-      sort_by = 'id',
-      order_by = 'asc',
+        role,
+        page = 1,
+        pageSize = 10,
+        nama,
+        sort_by = 'id',
+        order_by = 'asc',
     } = query;
 
-    const formattedRole = role ? (formatRole(role) as user_role_enum) : null;
-    const filter: Prisma.userWhereInput = {};
+    let filter: Prisma.userWhereInput = {};
 
-    if (
-      formattedRole &&
-      !Object.values(user_role_enum).includes(formattedRole)
-    ) {
-      throw new HttpException(
-        `Role tidak valid. Gunakan role berikut: ${Object.values(
-          user_role_enum,
-        ).join(', ')}`, HttpStatus.BAD_REQUEST
-      );
+    if (role && role !== 'all') {
+        const formattedRole = formatRole(role) as user_role_enum;
+        if (!Object.values(user_role_enum).includes(formattedRole)) {
+            throw new HttpException(
+                `Role tidak valid. Gunakan role berikut: ${Object.values(user_role_enum).join(', ')}`, 
+                HttpStatus.BAD_REQUEST
+            );
+        }
+        filter.role = formattedRole;
     }
 
-    if (formattedRole) {
-      filter.role = formattedRole;
-    } 
-
     if (nama) {
-      filter.nama = { contains: nama, mode: 'insensitive' };
+        filter.nama = { contains: nama, mode: 'insensitive' };
     }
 
     const total = await this.prisma.user.count({ where: filter });
 
     const users = await this.prisma.user.findMany({
-      where: filter,
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      orderBy: {
-        [sort_by]: order_by.toLowerCase() as 'asc' | 'desc',
-      },
+        where: filter,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        orderBy: {
+            [sort_by]: order_by.toLowerCase() as 'asc' | 'desc',
+        },
     });
 
     return this._pagination('Success', users, total, page, pageSize);
-  }
+}
+
 
   async register(payload: RegisterDto): Promise<any> {
     // Check if user already exists
