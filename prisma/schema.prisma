@@ -315,7 +315,7 @@ model staf {
   updated_at DateTime @default(now()) @db.Timestamp(6)
   alamat     String   @default("unknown") @db.VarChar
   userId     Int?
-  user       user?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_7e131111b7e37193cbdd8b98251")
+  user       user?    @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_7e131111b7e37193cbdd8b98251")
 }
 
 enum mapel_status_mapel_enum {
