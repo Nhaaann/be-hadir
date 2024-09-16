@@ -26,6 +26,9 @@ export class AppService {
   @Cron(CronExpression.EVERY_10_SECONDS)
   async tesCron() {
     console.log('tes cron');
+    const data = await this.prisma.kelas.findMany()
+
+    return data;
   }
 
   @Cron(CronExpression.EVERY_10_SECONDS)
