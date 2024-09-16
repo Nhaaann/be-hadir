@@ -24,6 +24,11 @@ export class AppService {
   }
 
   @Cron(CronExpression.EVERY_10_SECONDS)
+  async tesCron() {
+    console.log('tes cron');
+  }
+
+  @Cron(CronExpression.EVERY_10_SECONDS)
   async handleAutoAbsenGuru() {
     const currentTime = new Date();
     const currentDate = currentTime.toISOString().split('T')[0];
