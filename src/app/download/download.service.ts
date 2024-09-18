@@ -1,230 +1,136 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
 import { Injectable } from '@nestjs/common';
+import { Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as os from 'os';
-import { Response } from 'express';
-import * as PDFKit from 'pdfkit'; // Perbaiki impor pdfkit
+import * as PDFKit from 'pdfkit';
 import BaseResponse from '../../utils/response/base.response';
 import { ResponseSuccess } from '../../utils/interface/respone';
 
+interface AttendanceRecord {
+  name: string;
+  mon: string;
+  tue: string;
+  wed: string;
+  thu: string;
+  fri: string;
+  sat: string;
+}
+
 @Injectable()
 export class DownloadService extends BaseResponse {
+  private readonly DOWNLOAD_PATH = 'D:\\Users\\fatin\\Downloads\\pdf';
+  private readonly PAGE_SIZE = 'A4';
+  private readonly PAGE_LAYOUT = 'portrait';
+  private readonly FONT_REGULAR = 'Helvetica';
+  private readonly FONT_BOLD = 'Helvetica-Bold';
+
   constructor() {
     super();
   }
 
-  private generateUniqueFilename(): string {
-    const now = new Date();
-    const formattedDate = now.toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
-    const formattedTime = now.toTimeString().slice(0, 8).replace(/:/g, ''); // HHMMSS
-    return `attendance-report-${formattedDate}-${formattedTime}.pdf`;
+  async generateAttendanceReport(response: Response): Promise<ResponseSuccess> {
+    const dummyData = this.getDummyData();
+    const pdfDoc = this.createPDFDocument();
+    
+    this.addHeaderAndImages(pdfDoc);
+    this.createAttendanceTable(pdfDoc, dummyData);
+
+    const filePath = this.saveAndDownloadPDF(pdfDoc, response);
+
+    return this._success('OK, berhasil download', response);
   }
 
-  private generatePDFDocument(data: any[]): PDFKit.PDFDocument {
-    const doc = new PDFKit({
-      size: 'A4',
-      layout: 'portrait',
+  private createPDFDocument(): PDFKit.PDFDocument {
+    return new PDFKit({
+      size: this.PAGE_SIZE,
+      layout: this.PAGE_LAYOUT,
     });
+  }
 
+  private addHeaderAndImages(doc: PDFKit.PDFDocument): void {
     const leftImagePath = 'assets/Logo mq.png';
     const rightImagePath = 'assets/TUT.png';
 
-    // Add images and header
-    doc
-      .image(leftImagePath, 80, 90, { width: 40 })
-      .image(rightImagePath, 470, 90, { width: 40 })
-      .fontSize(14)
-      .moveDown(2)
-      .font('Helvetica-Bold')
-      .text('YAYASAN PESANTREN WISATA ALAM', { align: 'center' })
-      .text('SMK MADINATUL QURAN', { align: 'center' })
-      .moveDown(1)
-      .fontSize(11)
-      .font('Helvetica')
-      .text(
-        'Kp. Kebon Kelapa, RT.02/RW.011, Singasari, Kec. Jonggol, Kabupaten Bogor, Jawa Barat 16830',
-        { align: 'center' },
-      )
-      .moveDown(2);
+    doc.image(leftImagePath, 80, 90, { width: 40 })
+       .image(rightImagePath, 470, 90, { width: 40 })
+       .fontSize(14)
+       .moveDown(2)
+       .font(this.FONT_BOLD)
+       .text('YAYASAN PESANTREN WISATA ALAM', { align: 'center' })
+       .text('SMK MADINATUL QURAN', { align: 'center' })
+       .moveDown(1)
+       .fontSize(11)
+       .font(this.FONT_REGULAR)
+       .text('Kp. Kebon Kelapa, RT.02/RW.011, Singasari, Kec. Jonggol, Kabupaten Bogor, Jawa Barat 16830', { align: 'center' })
+       .moveDown(2);
+  }
 
+  private createAttendanceTable(doc: PDFKit.PDFDocument, data: AttendanceRecord[]): void {
     const startY = 200;
     const rowHeight = 20;
-    const columnWidths = [40, 115, 60, 60, 60, 60, 60, 65]; // Adjust column widths as needed
+    const columnWidths = [40, 115, 60, 60, 60, 60, 60, 65];
     const columns = ['No', 'Name', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const xStart = 45;
 
-    // Helper function to draw borders
-    const drawBorder = (
-      x: number,
-      y: number,
-      width: number,
-      height: number,
-    ) => {
-      doc
-        .moveTo(x, y)
-        .lineTo(x + width, y)
-        .lineTo(x + width, y + height)
-        .lineTo(x, y + height)
-        .closePath()
-        .stroke();
-    };
-
-    // Draw table header
-    let x = xStart;
-    let headerY = startY;
-
-    columns.forEach((col, i) => {
-      doc.fontSize(12).fillColor('black').text(col, x, headerY);
-      x += columnWidths[i];
-    });
-
-    // Draw table header border
-    drawBorder(
-      xStart,
-      headerY,
-      columnWidths.reduce((a, b) => a + b, 0),
-      rowHeight,
-    );
-
-    x = xStart;
-    // Draw vertical borders for header
-    columns.forEach((_, i) => {
-      doc
-        .moveTo(x, headerY)
-        .lineTo(x, headerY + rowHeight)
-        .stroke();
-      x += columnWidths[i];
-    });
-
-    let y = headerY + rowHeight;
-
-    // Draw table rows
-    data.forEach((row, index) => {
-      x = xStart;
-      doc
-        .fontSize(10)
-        .fillColor('black')
-        .text(`${index + 1}`, x, y)
-        .text(row.name, x + columnWidths[0], y)
-        .text(row.mon, x + columnWidths[0] + columnWidths[1], y)
-        .text(
-          row.tue,
-          x + columnWidths[0] + columnWidths[1] + columnWidths[2],
-          y,
-        )
-        .text(
-          row.wed,
-          x +
-            columnWidths[0] +
-            columnWidths[1] +
-            columnWidths[2] +
-            columnWidths[3],
-          y,
-        )
-        .text(
-          row.thu,
-          x +
-            columnWidths[0] +
-            columnWidths[1] +
-            columnWidths[2] +
-            columnWidths[3] +
-            columnWidths[4],
-          y,
-        )
-        .text(
-          row.fri,
-          x +
-            columnWidths[0] +
-            columnWidths[1] +
-            columnWidths[2] +
-            columnWidths[3] +
-            columnWidths[4] +
-            columnWidths[5],
-          y,
-        )
-        .text(
-          row.sat,
-          x +
-            columnWidths[0] +
-            columnWidths[1] +
-            columnWidths[2] +
-            columnWidths[3] +
-            columnWidths[4] +
-            columnWidths[5] +
-            columnWidths[6],
-          y,
-        );
-
-      // Draw row border
-      drawBorder(
-        xStart,
-        y - rowHeight,
-        columnWidths.reduce((a, b) => a + b, 0),
-        rowHeight,
-      );
-
-      x = xStart;
-      // Draw vertical borders for each cell
-      columns.forEach((_, i) => {
-        doc
-          .moveTo(x, y)
-          .lineTo(x, y + rowHeight)
-          .stroke();
-        x += columnWidths[i];
-      });
-
-      y += rowHeight;
-    });
-
-    // Draw outer border for the table
-    drawBorder(
-      xStart,
-      startY,
-      columnWidths.reduce((a, b) => a + b, 0),
-      y - startY,
-    );
-
-    return doc;
+    this.drawTableHeader(doc, columns, xStart, startY, columnWidths, rowHeight);
+    this.drawTableRows(doc, data, xStart, startY + rowHeight, columnWidths, rowHeight);
   }
 
-  async generateAttendanceReport(response: Response): Promise<ResponseSuccess> {
-    const dummyData = [
-      {
-        name: 'Rizky Alfiansyah',
-        mon: 'Att',
-        tue: 'Att',
-        wed: 'Att',
-        thu: 'Att',
-        fri: 'Att',
-        sat: 'Late',
-      },
-      {
-        name: 'Rizky Alfiansyah',
-        mon: 'Att',
-        tue: 'Att',
-        wed: 'Att',
-        thu: 'Att',
-        fri: 'Att',
-        sat: 'Late',
-      },
-    ];
+  private drawTableHeader(doc: PDFKit.PDFDocument, columns: string[], x: number, y: number, columnWidths: number[], rowHeight: number): void {
+    let currentX = x;
+    columns.forEach((col, i) => {
+      doc.fontSize(12).fillColor('black').text(col, currentX, y);
+      currentX += columnWidths[i];
+    });
 
-    const pdfDoc = this.generatePDFDocument(dummyData);
+    this.drawBorder(doc, x, y, columnWidths.reduce((a, b) => a + b, 0), rowHeight);
+    this.drawVerticalBorders(doc, columns, x, y, columnWidths, rowHeight);
+  }
 
-    // Generate a unique filename
+  private drawTableRows(doc: PDFKit.PDFDocument, data: AttendanceRecord[], x: number, y: number, columnWidths: number[], rowHeight: number): void {
+    data.forEach((row, index) => {
+      const rowY = y + index * rowHeight;
+      this.drawRowContent(doc, row, index, x, rowY, columnWidths);
+      this.drawBorder(doc, x, rowY, columnWidths.reduce((a, b) => a + b, 0), rowHeight);
+      this.drawVerticalBorders(doc, Object.keys(row), x, rowY, columnWidths, rowHeight);
+    });
+  }
+
+  private drawRowContent(doc: PDFKit.PDFDocument, row: AttendanceRecord, index: number, x: number, y: number, columnWidths: number[]): void {
+    doc.fontSize(10).fillColor('black');
+    let currentX = x;
+
+    doc.text(`${index + 1}`, currentX, y);
+    currentX += columnWidths[0];
+
+    Object.values(row).forEach((value, i) => {
+      doc.text(value, currentX, y);
+      currentX += columnWidths[i + 1];
+    });
+  }
+
+  private drawBorder(doc: PDFKit.PDFDocument, x: number, y: number, width: number, height: number): void {
+    doc.rect(x, y, width, height).stroke();
+  }
+
+  private drawVerticalBorders(doc: PDFKit.PDFDocument, columns: string[], x: number, y: number, columnWidths: number[], rowHeight: number): void {
+    let currentX = x;
+    columns.forEach((_, i) => {
+      doc.moveTo(currentX, y).lineTo(currentX, y + rowHeight).stroke();
+      currentX += columnWidths[i];
+    });
+  }
+
+  private saveAndDownloadPDF(doc: PDFKit.PDFDocument, response: Response): string {
     const uniqueFilename = this.generateUniqueFilename();
-    const downloadsPath = 'D:\\Users\\fatin\\Downloads\\pdf';
-    const filePath = path.join(downloadsPath, uniqueFilename);
+    const filePath = path.join(this.DOWNLOAD_PATH, uniqueFilename);
 
-    // Ensure the directory exists
-    if (!fs.existsSync(downloadsPath)) {
-      fs.mkdirSync(downloadsPath, { recursive: true });
+    if (!fs.existsSync(this.DOWNLOAD_PATH)) {
+      fs.mkdirSync(this.DOWNLOAD_PATH, { recursive: true });
     }
 
     const writeStream = fs.createWriteStream(filePath);
-
-    pdfDoc.pipe(writeStream);
+    doc.pipe(writeStream);
 
     writeStream.on('finish', () => {
       response.download(filePath, uniqueFilename, (err) => {
@@ -237,8 +143,37 @@ export class DownloadService extends BaseResponse {
       });
     });
 
-    pdfDoc.end();
+    doc.end();
+    return filePath;
+  }
 
-    return this._success('OK, berhasil download', response);
+  private generateUniqueFilename(): string {
+    const now = new Date();
+    const formattedDate = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const formattedTime = now.toTimeString().slice(0, 8).replace(/:/g, '');
+    return `attendance-report-${formattedDate}-${formattedTime}.pdf`;
+  }
+
+  private getDummyData(): AttendanceRecord[] {
+    return [
+      {
+        name: 'Rizky Alfiansyah',
+        mon: 'Att',
+        tue: 'Att',
+        wed: 'Att',
+        thu: 'Att',
+        fri: 'Att',
+        sat: 'Late',
+      },
+      {
+        name: 'John Doe',
+        mon: 'Att',
+        tue: 'Late',
+        wed: 'Att',
+        thu: 'Abs',
+        fri: 'Att',
+        sat: 'Att',
+      },
+    ];
   }
 }

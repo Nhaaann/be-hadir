@@ -23,7 +23,7 @@ export class AppService {
     return 'Hai';
   }
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  // @Cron(CronExpression.EVERY_10_SECONDS)
   async tesCron() {
     console.log('tes cron');
     const data = await this.prisma.kelas.findMany()
@@ -31,7 +31,7 @@ export class AppService {
     return data;
   }
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  // @Cron(CronExpression.EVERY_10_SECONDS)
   async handleAutoAbsenGuru() {
     const currentTime = new Date();
     const currentDate = currentTime.toISOString().split('T')[0];
@@ -240,7 +240,7 @@ export class AppService {
     }
   }
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  // @Cron(CronExpression.EVERY_10_SECONDS)
   async handleAutoAbsenSiswa() {
     const currentTime = new Date();
     const currentDate = currentTime.toISOString().split('T')[0];
