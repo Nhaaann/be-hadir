@@ -23,6 +23,7 @@ import * as dotenv from 'dotenv';
 import { StafController } from './staf/staf.controller';
 import { StafService } from './staf/staf.service';
 import { AppService } from 'src/app.service';
+import { AbsenGateway } from '../absen/absen.gateway';
 dotenv.config();
 
 @Module({
@@ -45,6 +46,7 @@ dotenv.config();
     SiswaService,
     AppService,
     GuruService,
+    AbsenGateway,
     StafService
   ],
 })
