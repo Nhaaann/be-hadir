@@ -22,6 +22,7 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import * as dotenv from 'dotenv';
 import { StafController } from './staf/staf.controller';
 import { StafService } from './staf/staf.service';
+import { AppService } from 'src/app.service';
 dotenv.config();
 
 @Module({
@@ -42,6 +43,7 @@ dotenv.config();
     JwtAccessTokenStrategy,
     JwtRefreshTokenStrategy,
     SiswaService,
+    AppService,
     GuruService,
     StafService
   ],
