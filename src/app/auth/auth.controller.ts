@@ -11,18 +11,28 @@ import {
   HttpException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { DeleteBulkUserDto, LoginDto, queryUSerDTO, RegisterDto, ResetPasswordDto } from './auth.dto';
+import {
+  DeleteBulkUserDto,
+  LoginDto,
+  queryUSerDTO,
+  RegisterDto,
+  ResetPasswordDto,
+} from './auth.dto';
 import { JwtAccessTokenStrategy } from './jwtAccessToken.strategy';
 import { JwtGuard, JwtGuardRefreshToken } from './auth.guard';
-import { ResponseSuccess } from '../../utils/interface/respone'; 
+import { ResponseSuccess } from '../../utils/interface/respone';
 import { query } from 'express';
 import { Pagination } from '../../utils/decorator/pagination.decorator';
 import { RegisterGuruDto } from './guru/guru.dto';
 import { RegisterSiswaDto } from './siswa/siswa.dto';
+import { AppService } from 'src/app.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private appService: AppService,
+  ) {}
 
   @Post('register')
   async register(@Body() payload: RegisterDto) {
@@ -37,6 +47,7 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() payload: LoginDto) {
+    await this.appService.updateAttendanceOnLogin();
     return this.authService.login(payload);
   }
 
