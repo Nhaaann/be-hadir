@@ -47,7 +47,7 @@ dotenv.config();
     AppService,
     GuruService,
     AbsenGateway,
-    StafService
+    StafService,
   ],
 })
 export class AuthModule {}
