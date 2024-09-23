@@ -111,7 +111,7 @@ export class AppService {
   ) {
     if (!jamDetailJadwal.jam_jadwal || !jamDetailJadwal.jam_jadwal.jam_mulai) {
       console.error(`jam_jadwal or jam_mulai is undefined for jamDetailJadwal ID: ${jamDetailJadwal.id}`);
-      return;
+      return
     }
   
     const currentTime = new Date();
