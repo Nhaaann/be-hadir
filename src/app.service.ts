@@ -109,13 +109,18 @@ export class AppService {
     day: string,
     isPastDay: boolean,
   ) {
+    if (!jamDetailJadwal.jam_jadwal || !jamDetailJadwal.jam_jadwal.jam_mulai) {
+      console.error(`jam_jadwal or jam_mulai is undefined for jamDetailJadwal ID: ${jamDetailJadwal.id}`);
+      return;
+    }
+  
     const currentTime = new Date();
     const currentDate = currentTime.toISOString().split('T')[0];
     const jamMulai = new Date(
       `${currentDate}T${jamDetailJadwal.jam_jadwal.jam_mulai}`,
     );
     const jamSelesaiAlpha = new Date(jamMulai.getTime() + 45 * 60000);
-
+  
     // Process teacher attendance
     const absentTeacher = await this.prisma.guru.findFirst({
       where: {
@@ -130,11 +135,11 @@ export class AppService {
         user: true,
       },
     });
-
+  
     if (absentTeacher) {
       await this.markTeacherAbsent(absentTeacher, jamDetailJadwal, currentTime);
     }
-
+  
     const absentStudents = await this.prisma.murid.findMany({
       where: {
         kelas: { id: jamDetailJadwal.kelas.id },
@@ -150,11 +155,12 @@ export class AppService {
         user: true,
       },
     });
-
+  
     for (const absentStudent of absentStudents) {
       await this.markStudentAbsent(absentStudent, jamDetailJadwal, currentTime);
     }
   }
+  
 
   private async markTeacherAbsent(
     teacher: any,
