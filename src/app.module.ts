@@ -40,7 +40,6 @@ import { UploadModule } from './app/upload/upload.module';
     PrismaModule,
     ScheduleModule.forRoot(),
     AuthModule,
-
     ProfileModule,
     KelasModule,
     MapelModule,
