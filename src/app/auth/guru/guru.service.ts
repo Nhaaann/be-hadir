@@ -503,6 +503,7 @@ export class GuruService extends BaseResponse {
         email: guru.user.email,
         avatar: guru.user.avatar,
         nomor_hp: guru.user.nomor_hp,
+        jadwal_detail_id: guru.jadwal_detail_id,
         mapel: guru.subject_code_entity.map((subject) => ({
           id_mapel: subject.mapel.id,
           nama_mapel: subject.mapel.nama_mapel,
