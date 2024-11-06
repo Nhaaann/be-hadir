@@ -10,7 +10,7 @@ import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({
   cors: {
-    origin: "https://hadir-pak.vercel.app/",
+    origin: "*",
     credentials: true,
   },
 })
