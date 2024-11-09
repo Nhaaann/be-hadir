@@ -398,7 +398,7 @@ export class JadwalService extends BaseResponse {
       where: { id: this.req.user.id },
       include: {
         subject_code_entity: true,
-        user: true
+        user: true,
       },
     });
 
@@ -451,38 +451,38 @@ export class JadwalService extends BaseResponse {
       isJadwalHabis = currentTime >= jamSelesai;
 
       // if (isMulai) {
-        const absenGuru = await this.prisma.absen_guru.findFirst({
-          where: {
-            jam_detail_jadwal: { id: schedule.jamDetail.id },
-            guru: { id: this.req.user.id },
-          },
-          include: { jam_detail_jadwal: true },
-        });
+      const absenGuru = await this.prisma.absen_guru.findFirst({
+        where: {
+          jam_detail_jadwal: { id: schedule.jamDetail.id },
+          guru: { id: this.req.user.id },
+        },
+        include: { jam_detail_jadwal: true },
+      });
 
-        const absenKelas = await this.prisma.absen_kelas.findFirst({
-          where: {
-            jam_detail_jadwal: { id: schedule.jamDetail.id },
-            guru: { id: this.req.user.id },
-          },
-        });
+      const absenKelas = await this.prisma.absen_kelas.findFirst({
+        where: {
+          jam_detail_jadwal: { id: schedule.jamDetail.id },
+          guru: { id: this.req.user.id },
+        },
+      });
 
-        const isAbsen = !!absenGuru;
-        const isMasukKelas = !!absenKelas;
+      const isAbsen = !!absenGuru;
+      const isMasukKelas = !!absenKelas;
 
-        return this._success('Jam detail found successfully', {
-          nama_user: guru.user.nama,
-          jamDetailId: schedule.jamDetail.id,
-          jam_mulai: schedule.jamJadwal.jam_mulai,
-          jam_selesai: schedule.jamJadwal.jam_selesai,
-          mapel: schedule.jamDetail.subject_code_entity.mapel.nama_mapel,
-          kelas: schedule.jamDetail.kelas.nama_kelas,
-          is_absen: isAbsen,
-          is_masuk_kelas: isMasukKelas,
-          is_mulai: true,
-          is_jadwal_habis: false,
-          is_jadwal_habis_hari_ini: isJadwalHabisHariIni,
-        });
-      }
+      return this._success('Jam detail found successfully', {
+        nama_user: guru.user.nama,
+        jamDetailId: schedule.jamDetail.id,
+        jam_mulai: schedule.jamJadwal.jam_mulai,
+        jam_selesai: schedule.jamJadwal.jam_selesai,
+        mapel: schedule.jamDetail.subject_code_entity.mapel.nama_mapel,
+        kelas: schedule.jamDetail.kelas.nama_kelas,
+        is_absen: isAbsen,
+        is_masuk_kelas: isMasukKelas,
+        is_mulai: true,
+        is_jadwal_habis: false,
+        is_jadwal_habis_hari_ini: isJadwalHabisHariIni,
+      });
+    }
     // }
 
     if (todaysSchedules.length > 0) {
@@ -580,62 +580,61 @@ export class JadwalService extends BaseResponse {
   async create(createJadwalDto: CreateJadwalDto): Promise<any> {
     const { hari_id, jam_jadwal } = createJadwalDto;
 
-    // Gunakan transaksi untuk memastikan atomicity
-    await this.prisma.$transaction(async (prisma) => {
-      // Periksa apakah Hari dan User ada
-      const hari = await prisma.hari.findUnique({
-        where: { id: Number(hari_id) },
-      });
-      if (!hari) {
-        throw new HttpException('Hari not found', HttpStatus.NOT_FOUND);
-      }
+    return this.prisma
+      .$transaction(async (prisma) => {
+        const hari = await prisma.hari.findUnique({
+          where: { id: Number(hari_id) },
+        });
+        if (!hari)
+          throw new HttpException('Hari not found', HttpStatus.NOT_FOUND);
 
-      const user = await prisma.user.findUnique({
-        where: { id: this.req.user.id },
-      });
-      if (!user) {
-        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-      }
+        const user = await prisma.user.findUnique({
+          where: { id: this.req.user.id },
+        });
+        if (!user)
+          throw new HttpException('User not found', HttpStatus.NOT_FOUND);
 
-      // Periksa apakah Jadwal untuk hari yang diberikan sudah ada
-      const existingJadwal = await prisma.jadwal.findFirst({
-        where: { hariId: Number(hari_id) },
-        include: { hari: true },
-      });
+        const existingJadwal = await prisma.jadwal.findFirst({
+          where: { hariId: Number(hari_id) },
+          include: { hari: true },
+        });
+        if (existingJadwal) {
+          throw new HttpException(
+            `Jadwal for ${existingJadwal.hari.nama_hari} already exists`,
+            HttpStatus.FOUND,
+          );
+        }
 
-      if (existingJadwal) {
-        throw new HttpException(
-          `Jadwal for ${existingJadwal.hari.nama_hari} already exists`,
-          HttpStatus.FOUND,
-        );
-      }
-
-      const jadwal = await prisma.jadwal.create({
-        data: {
-          hariId: Number(hari_id),
-          created_by: user.id,
-          jam_jadwal: {
-            create: jam_jadwal.map((jam) => ({
-              jam_mulai: jam.jam_mulai,
-              jam_selesai: jam.jam_selesai,
-              is_rest: jam.is_rest,
-              jam_detail_jadwal: {
-                create: jam.jam_detail.map((detail) => ({
-                  kelasId: detail.kelas,
-                  subjectCodeId: Number(detail.subject_code),
-                })),
-              },
-            })),
+        const jadwal = await prisma.jadwal.create({
+          data: {
+            hariId: Number(hari_id),
+            created_by: user.id,
+            jam_jadwal: {
+              create: jam_jadwal.map((jam) => ({
+                jam_mulai: jam.jam_mulai,
+                jam_selesai: jam.jam_selesai,
+                is_rest: jam.is_rest,
+                jam_detail_jadwal: {
+                  create: jam.jam_detail.map((detail) => ({
+                    kelasId: detail.kelas,
+                    subjectCodeId: Number(detail.subject_code),
+                  })),
+                },
+              })),
+            },
           },
-        },
-      });
+        });
 
-      return {
-        status: 'Success',
-        message: 'Jadwal created successfully',
-        data: jadwal,
-      };
-    });
+        return {
+          status: 'Success',
+          message: 'Jadwal created successfully',
+          data: jadwal,
+        };
+      })
+      .catch((error) => {
+        console.error('Transaction error: ', error); // Log the error for debugging
+        throw error; // Rethrow to handle it in the calling function
+      });
   }
 
   async update(id: number, updateJadwalDto: UpdateJadwalDto): Promise<any> {

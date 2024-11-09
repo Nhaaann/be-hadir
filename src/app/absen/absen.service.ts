@@ -228,6 +228,7 @@ export class AbsenService {
     });
 
     const totalSiswa = absenKelas.kelas.murid.length;
+    console.log(totalSiswa)
     const jumlahHadir = absenKelas.absen_siswa.filter(
       (siswa) => siswa.status === 'Hadir',
     ).length;
