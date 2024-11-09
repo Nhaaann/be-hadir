@@ -392,7 +392,9 @@ export class GuruService extends BaseResponse {
       // Filter subject_code_entity by initial_subject
       const filteredMapelList = subject_code_entity
         .filter((subject) =>
-          subject.code.toUpperCase().includes(initial_subject.toUpperCase()),
+          subject.code && initial_subject
+            ? subject.code.toUpperCase().includes(initial_subject.toUpperCase())
+            : true,
         )
         .map((subject, index) => ({
           id_mapel: subject.mapel.id,
