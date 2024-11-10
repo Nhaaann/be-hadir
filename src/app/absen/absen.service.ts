@@ -36,6 +36,7 @@ import { AbsenGateway } from './absen.gateway';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { REQUEST } from '@nestjs/core';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class AbsenService {
@@ -228,7 +229,7 @@ export class AbsenService {
     });
 
     const totalSiswa = absenKelas.kelas.murid.length;
-    console.log(totalSiswa)
+    console.log(totalSiswa);
     const jumlahHadir = absenKelas.absen_siswa.filter(
       (siswa) => siswa.status === 'Hadir',
     ).length;
@@ -243,7 +244,8 @@ export class AbsenService {
       id: absenKelas.id,
       kode_kelas: absenKelas.kode_kelas,
       nama_kelas: absenKelas.kelas.nama_kelas,
-      nama_mapel: absenKelas.jam_detail_jadwal.subject_code_entity.mapel.nama_mapel,
+      nama_mapel:
+        absenKelas.jam_detail_jadwal.subject_code_entity.mapel.nama_mapel,
       jam_mulai: absenKelas.jam_jadwal.jam_mulai,
       jam_selesai: absenKelas.jam_jadwal.jam_selesai,
       subject_code: absenKelas.jam_detail_jadwal.subject_code_entity.code,
@@ -317,7 +319,8 @@ export class AbsenService {
       id: absenKelas.id,
       nama_kelas: absenKelas.kelas.nama_kelas,
       code_kelas: absenKelas.kode_kelas,
-      nama_mapel: absenKelas.jam_detail_jadwal.subject_code_entity.mapel.nama_mapel,
+      nama_mapel:
+        absenKelas.jam_detail_jadwal.subject_code_entity.mapel.nama_mapel,
       subject_code: absenKelas.jam_detail_jadwal.subject_code_entity.code,
       guru: absenKelas.user.nama,
       daftar_siswa: absenKelas.absen_siswa.map((siswa) => ({
@@ -334,29 +337,7 @@ export class AbsenService {
       data: data,
     };
   }
-  async list(): Promise<any> {
-    const absens = await this.prisma.absen_siswa.findMany();
 
-    // const data = absens.map((absen) => ({
-    //   id: absen.id,
-    //   nama: absen.guru.user.nama,
-    //   waktu_absen: absen.waktu_absen,
-    //   status: absen.status,
-    //   hasil_jurnal_kegiatan: absen.hasil_jurnal_kegiatan,
-    //   hari: absen.jadwal.hari,
-    //   jam_mulai: absen.jamJadwal.jam_mulai,
-    //   jam_selesai: absen.jamJadwal.jam_selesai,
-    //   subject_code: absen.jamDetailJadwal.subject_code.code,
-    //   kelas: absen.jamDetailJadwal.kelas.nama_kelas,
-    //   role: absen.guru.user.role,
-    // }));
-
-    return {
-      status: 'Success',
-      message: 'OKe',
-      data: absens,
-    };
-  }
   async delete(id: number): Promise<any> {
     const absen = await this.prisma.absen_kelas.findUnique({
       where: { id },
@@ -386,4 +367,282 @@ export class AbsenService {
     }
     return result;
   }
+
+  async list(
+    startDateFilter?: string,
+    endDateFilter?: string,
+    roleFilter?: string,
+  ): Promise<any> {
+    // Setup options for filtering date range
+    const dateFilter =
+      startDateFilter && endDateFilter
+        ? {
+            waktu_absen: {
+              gte: new Date(new Date(startDateFilter).setHours(0, 0, 0, 0)),
+              lte: new Date(new Date(endDateFilter).setHours(23, 59, 59, 999)),
+            },
+          }
+        : {};
+
+    // Initialize arrays to store absences based on role filter
+    let siswaAbsens = [];
+    let guruAbsens = [];
+
+    // Fetch data based on roleFilter or fetch both if no roleFilter
+    if (!roleFilter || roleFilter === 'siswa') {
+      siswaAbsens = await this.prisma.absen_siswa.findMany({
+        where: dateFilter,
+        include: {
+          user: true,
+          absen_kelas: { include: { kelas: true } },
+          jam_detail_jadwal: {
+            include: {
+              jam_jadwal: { include: { jadwal: { include: { hari: true } } } },
+              subject_code_entity: true,
+            },
+          },
+        },
+      });
+    }
+
+    if (!roleFilter || roleFilter === 'guru') {
+      guruAbsens = await this.prisma.absen_guru.findMany({
+        where: dateFilter,
+        include: {
+          guru: {
+            include: {
+              user: true,
+            },
+          },
+          absen_kelas: { include: { kelas: true } },
+          jam_detail_jadwal: {
+            include: {
+              jam_jadwal: { include: { jadwal: { include: { hari: true } } } },
+              subject_code_entity: true,
+              kelas: true,
+            },
+          },
+        },
+      });
+    }
+
+    // Format data for both siswa and guru absences
+    const formattedSiswaAbsens = siswaAbsens.map((absen) => ({
+      id: absen.id,
+      nama: absen.user?.nama || 'N/A',
+      waktu_absen: absen.waktu_absen ? absen.waktu_absen.toISOString() : 'N/A',
+      status: absen.status,
+      hasil_jurnal_kegiatan: 'N/A',
+      hari: absen.jam_detail_jadwal.jam_jadwal.jadwal?.hari?.nama_hari || 'N/A',
+      jam_mulai: absen.jam_detail_jadwal.jam_jadwal.jam_mulai || 'N/A',
+      jam_selesai: absen.jam_detail_jadwal.jam_jadwal.jam_selesai || 'N/A',
+      subject_code: absen.jam_detail_jadwal?.subject_code_entity?.code || 'N/A',
+      kelas: absen.absen_kelas?.kelas?.nama_kelas || 'N/A',
+      role: 'siswa',
+    }));
+
+    const formattedGuruAbsens = guruAbsens.map((absen) => ({
+      id: absen.id,
+      nama: absen.guru?.user?.nama || 'N/A',
+      waktu_absen: absen.waktu_absen ? absen.waktu_absen.toISOString() : 'N/A',
+      status: absen.status,
+      hasil_jurnal_kegiatan: 'N/A',
+      hari: absen.jam_detail_jadwal.jam_jadwal.jadwal?.hari?.nama_hari || 'N/A',
+      jam_mulai: absen.jam_detail_jadwal.jam_jadwal.jam_mulai || 'N/A',
+      jam_selesai: absen.jam_detail_jadwal.jam_jadwal.jam_selesai || 'N/A',
+      subject_code: absen.jam_detail_jadwal?.subject_code_entity?.code || 'N/A',
+      kelas: absen.jam_detail_jadwal?.kelas?.nama_kelas || 'N/A',
+      role: 'guru',
+    }));
+
+    // Combine both arrays if no specific roleFilter, otherwise return only one of them
+    const combinedData = [...formattedSiswaAbsens, ...formattedGuruAbsens];
+
+    // Calculate the total number of 'hadir' (present) status
+    const totalHadir = combinedData.filter(
+      (absen) => absen.status === 'Hadir',
+    ).length;
+
+    return {
+      status: 'Success',
+      message: 'Data retrieved successfully',
+      data: combinedData,
+      totalHadir, // Add total 'hadir' count to the response
+    };
+  }
+
+  private getWeekRangeForMonth(
+    week: number,
+    month: number,
+    year: number,
+  ): { startDate: Date; endDate: Date } {
+    const startOfMonth = new Date(year, month - 1, 1); // Awal bulan
+    const startDate = new Date(startOfMonth);
+    startDate.setDate((week - 1) * 7 + 1); // Menghitung tanggal mulai minggu
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 6); // Menghitung tanggal akhir minggu
+
+    // Sesuaikan akhir minggu jika melebihi batas bulan
+    if (endDate.getMonth() !== startOfMonth.getMonth()) {
+      endDate.setDate(new Date(year, month, 0).getDate()); // Sesuaikan dengan akhir bulan
+    }
+
+    // Kembalikan rentang minggu dalam zona waktu lokal
+    startDate.setHours(0, 0, 0, 0); // Set waktu mulai ke awal hari
+    endDate.setHours(23, 59, 59, 999); // Set waktu akhir ke akhir hari
+    return { startDate, endDate };
+  }
+
+  // Fungsi untuk mendapatkan data kehadiran berdasarkan minggu dan role
+  async getAttendanceByWeekAndRole(
+    role?: string, // Role: siswa/guru
+    week?: number, // Minggu yang dipilih (1-5), optional
+  ): Promise<any> {
+    const currentDate = new Date();
+    const month = currentDate.getMonth() + 1; // Bulan dimulai dari 0, jadi +1
+    const year = currentDate.getFullYear();
+  
+    if (!week) {
+      const currentDay = currentDate.getDate();
+      week = Math.ceil(currentDay / 7); // Menentukan minggu berdasarkan tanggal hari ini
+    }
+  
+    const { startDate, endDate } = this.getWeekRangeForMonth(week, month, year);
+  
+    console.log(`Minggu ke-${week} Bulan ${month} Tahun ${year}`);
+    console.log(`Tanggal mulai: ${startDate.toLocaleDateString()}`);
+    console.log(`Tanggal akhir: ${endDate.toLocaleDateString()}`);
+  
+    const dateFilter = {
+      waktu_absen: {
+        gte: new Date(startDate),
+        lte: new Date(endDate),
+      },
+      status: 'Hadir',
+    };
+  
+    let absens = [];
+  
+    // Cek apakah role disediakan
+    if (role === 'siswa') {
+      absens = await this.prisma.absen_siswa.findMany({
+        where: dateFilter,
+        include: {
+          user: true,
+          absen_kelas: { include: { kelas: true } },
+          jam_detail_jadwal: {
+            include: {
+              jam_jadwal: { include: { jadwal: { include: { hari: true } } } },
+            },
+          },
+        },
+      });
+    } else if (role === 'guru') {
+      absens = await this.prisma.absen_guru.findMany({
+        where: dateFilter,
+        include: {
+          guru: {
+            include: {
+              user: true,
+            },
+          },
+          absen_kelas: { include: { kelas: true } },
+          jam_detail_jadwal: {
+            include: {
+              jam_jadwal: { include: { jadwal: { include: { hari: true } } } },
+              kelas: true,
+            },
+          },
+        },
+      });
+    } else {
+      // Jika role tidak disediakan (null, undefined, atau kosong), gabungkan data guru dan siswa
+      const siswaAbsens = await this.prisma.absen_siswa.findMany({
+        where: dateFilter,
+        include: {
+          user: true,
+          absen_kelas: { include: { kelas: true } },
+          jam_detail_jadwal: {
+            include: {
+              jam_jadwal: { include: { jadwal: { include: { hari: true } } } },
+            },
+          },
+        },
+      });
+  
+      const guruAbsens = await this.prisma.absen_guru.findMany({
+        where: dateFilter,
+        include: {
+          guru: {
+            include: {
+              user: true,
+            },
+          },
+          absen_kelas: { include: { kelas: true } },
+          jam_detail_jadwal: {
+            include: {
+              jam_jadwal: { include: { jadwal: { include: { hari: true } } } },
+              kelas: true,
+            },
+          },
+        },
+      });
+  
+      // Gabungkan kedua array data absensi
+      absens = [...siswaAbsens, ...guruAbsens];
+    }
+  
+    const formattedAbsens = absens.map((absen) => ({
+      id: absen.id,
+      nama: absen.guru?.user?.nama || absen.user?.nama || 'N/A',
+      status: absen.status,
+      hari: absen.jam_detail_jadwal.jam_jadwal.jadwal?.hari?.nama_hari || 'N/A',
+      kelas: absen.absen_kelas?.kelas?.nama_kelas || 'N/A',
+      role: role || (absen.guru ? 'guru' : 'siswa'), // Tentukan role berdasarkan data
+    }));
+  
+    console.log('Formatted Absen Data:', formattedAbsens);
+  
+    // Mapping hari ke dalam format yang sesuai dengan key dalam attendanceSummary
+    const attendanceSummary = {
+      Senin: 0,
+      Selasa: 0,
+      Rabu: 0,
+      Kamis: 0,
+      Jumat: 0,
+      Sabtu: 0,
+      Minggu: 0,
+    };
+  
+    // Mapping hari dari absen ke dalam format yang sesuai
+    const dayMapping = {
+      senin: 'Senin',
+      selasa: 'Selasa',
+      rabu: 'Rabu',
+      kamis: 'Kamis',
+      jumat: 'Jumat',
+      sabtu: 'Sabtu',
+      minggu: 'Minggu',
+    };
+  
+    formattedAbsens.forEach((absen) => {
+      console.log(
+        `Processing Absen: ${absen.nama}, Status: ${absen.status}, Hari: ${absen.hari}`,
+      );
+  
+      // Normalisasi hari dan sesuaikan dengan key dalam attendanceSummary
+      const normalizedDay = absen.hari.trim().toLowerCase();
+      console.log(`Normalized Day: ${normalizedDay}`); // Log untuk memastikan normalisasi
+  
+      // Jika hari ada dalam mapping, tambahkan ke counter
+      if (dayMapping[normalizedDay]) {
+        const mappedDay = dayMapping[normalizedDay];
+        attendanceSummary[mappedDay]++;
+      }
+    });
+  
+    console.log('Attendance Summary:', attendanceSummary);
+    return attendanceSummary;
+  }
+  
 }

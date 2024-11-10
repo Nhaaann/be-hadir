@@ -25,20 +25,18 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Request, Response } from 'express';
 import { Roles } from '../../utils/decorator/roles.decorator';
 import { Role } from '../auth/roles.enum';
-import { ResponseSuccess } from '../../utils/interface/respone'; 
+import { ResponseSuccess } from '../../utils/interface/respone';
 import { AbsenGateway } from './absen.gateway';
 import { AbsenSiswaService } from './absen-siswa/absen-siswa.service';
 import { AbsenGuruService } from './absen-guru/absen-guru.service';
 
 @Controller('absen')
-export class AbsenController{
+export class AbsenController {
   constructor(
     private readonly absenService: AbsenService,
     private readonly absenSiswaService: AbsenSiswaService,
     private readonly absenGuruService: AbsenGuruService,
-  ) {
-    
-  }
+  ) {}
 
   @UseGuards(JwtGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.GURU)
@@ -64,7 +62,6 @@ export class AbsenController{
     return this.absenService.keluarKelasGuru(createJurnalKegiatanDto, +id);
   }
 
-
   @UseGuards(JwtGuard, RolesGuard)
   @Delete('delete-kelas/:id')
   async deleteABsenkelas(@Param('id') id: string): Promise<any> {
@@ -83,9 +80,39 @@ export class AbsenController{
     return await this.absenSiswaService.AbsenSiswa(payload);
   }
 
+  @Get('week')
+  async getAttendanceByWeek(
+    @Query('role') role: string, // Parameter role
+    @Query('week') week: number, // Parameter role
+  ): Promise<any> {
+    try {
+      // Memanggil service untuk mendapatkan data kehadiran berdasarkan minggu saat ini
+      const attendanceData = await this.absenService.getAttendanceByWeekAndRole(
+        role,
+        week
+      );
+
+      return {
+        status: 'Success',
+        message: 'Data retrieved successfully for the current week',
+        data: attendanceData,
+      };
+    } catch (error) {
+      // Menangani error jika ada
+      return {
+        status: 'Error',
+        message: error.message,
+      };
+    }
+  }
+
   @Get('list')
-  async findAll() {
-    return await this.absenService.list();
+  async findAll(
+    @Query('dari_tanggal') dari_tanggal?: string,
+    @Query('sampai_tanggal') sampai_tanggal?: string,
+    @Query('role') role?: string,
+  ) {
+    return await this.absenService.list(dari_tanggal, sampai_tanggal, role);
   }
 
   @Get('list-absen-kelas')
