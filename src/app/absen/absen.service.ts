@@ -477,23 +477,34 @@ export class AbsenService {
     year: number,
   ): { startDate: Date; endDate: Date } {
     const startOfMonth = new Date(year, month - 1, 1); // Awal bulan
-    const startDate = new Date(startOfMonth);
-    startDate.setDate((week - 1) * 7 + 1); // Menghitung tanggal mulai minggu
-    const endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + 6); // Menghitung tanggal akhir minggu
-
-    // Sesuaikan akhir minggu jika melebihi batas bulan
-    if (endDate.getMonth() !== startOfMonth.getMonth()) {
-      endDate.setDate(new Date(year, month, 0).getDate()); // Sesuaikan dengan akhir bulan
+    const dayOfWeekToday = new Date().getDay(); // Mendapatkan hari ini (0: Minggu, 1: Senin, dst.)
+    const dayToday = new Date().getDate(); // Mendapatkan tanggal hari ini
+  
+    // Mulai tanggal untuk minggu yang dipilih
+    let startDate = new Date(startOfMonth);
+    startDate.setDate((week - 1) * 7 + 1); // Tentukan tanggal mulai dari minggu tertentu
+  
+    // Cek apakah tanggal hari ini melewati startDate dan termasuk minggu yang sedang diproses
+    if (week === Math.ceil(dayToday / 7) && dayToday > startDate.getDate()) {
+      startDate = new Date(year, month - 1, dayToday); // Set tanggal mulai dari tanggal hari ini
     }
-
-    // Kembalikan rentang minggu dalam zona waktu lokal
-    startDate.setHours(0, 0, 0, 0); // Set waktu mulai ke awal hari
-    endDate.setHours(23, 59, 59, 999); // Set waktu akhir ke akhir hari
+  
+    // Tentukan tanggal akhir minggu
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 6);
+  
+    // Sesuaikan akhir minggu jika melebihi akhir bulan
+    if (endDate.getMonth() !== startOfMonth.getMonth()) {
+      endDate.setDate(new Date(year, month, 0).getDate()); // Sesuaikan ke akhir bulan
+    }
+  
+    // Set waktu ke awal dan akhir hari untuk rentang
+    startDate.setHours(0, 0, 0, 0); // Awal hari
+    endDate.setHours(23, 59, 59, 999); // Akhir hari
+  
     return { startDate, endDate };
   }
-
-  // Fungsi untuk mendapatkan data kehadiran berdasarkan minggu dan role
+  
   async getAttendanceByWeekAndRole(
     role?: string, // Role: siswa/guru
     week?: number, // Minggu yang dipilih (1-5), optional
@@ -523,7 +534,6 @@ export class AbsenService {
   
     let absens = [];
   
-    // Cek apakah role disediakan
     if (role === 'siswa') {
       absens = await this.prisma.absen_siswa.findMany({
         where: dateFilter,
@@ -556,7 +566,6 @@ export class AbsenService {
         },
       });
     } else {
-      // Jika role tidak disediakan (null, undefined, atau kosong), gabungkan data guru dan siswa
       const siswaAbsens = await this.prisma.absen_siswa.findMany({
         where: dateFilter,
         include: {
@@ -588,7 +597,6 @@ export class AbsenService {
         },
       });
   
-      // Gabungkan kedua array data absensi
       absens = [...siswaAbsens, ...guruAbsens];
     }
   
@@ -598,12 +606,11 @@ export class AbsenService {
       status: absen.status,
       hari: absen.jam_detail_jadwal.jam_jadwal.jadwal?.hari?.nama_hari || 'N/A',
       kelas: absen.absen_kelas?.kelas?.nama_kelas || 'N/A',
-      role: role || (absen.guru ? 'guru' : 'siswa'), // Tentukan role berdasarkan data
+      role: role || (absen.guru ? 'guru' : 'siswa'),
     }));
   
     console.log('Formatted Absen Data:', formattedAbsens);
   
-    // Mapping hari ke dalam format yang sesuai dengan key dalam attendanceSummary
     const attendanceSummary = {
       Senin: 0,
       Selasa: 0,
@@ -611,10 +618,8 @@ export class AbsenService {
       Kamis: 0,
       Jumat: 0,
       Sabtu: 0,
-      Minggu: 0,
     };
   
-    // Mapping hari dari absen ke dalam format yang sesuai
     const dayMapping = {
       senin: 'Senin',
       selasa: 'Selasa',
@@ -622,22 +627,12 @@ export class AbsenService {
       kamis: 'Kamis',
       jumat: 'Jumat',
       sabtu: 'Sabtu',
-      minggu: 'Minggu',
     };
   
     formattedAbsens.forEach((absen) => {
-      console.log(
-        `Processing Absen: ${absen.nama}, Status: ${absen.status}, Hari: ${absen.hari}`,
-      );
-  
-      // Normalisasi hari dan sesuaikan dengan key dalam attendanceSummary
       const normalizedDay = absen.hari.trim().toLowerCase();
-      console.log(`Normalized Day: ${normalizedDay}`); // Log untuk memastikan normalisasi
-  
-      // Jika hari ada dalam mapping, tambahkan ke counter
       if (dayMapping[normalizedDay]) {
-        const mappedDay = dayMapping[normalizedDay];
-        attendanceSummary[mappedDay]++;
+        attendanceSummary[dayMapping[normalizedDay]]++;
       }
     });
   
