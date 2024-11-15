@@ -92,19 +92,21 @@ export class DownloadService extends BaseResponse {
     isLandscape: boolean = false,
   ): Promise<void> {
     const pageWidth = isLandscape ? 842 : 595;
-    const leftImageUrl = 'https://res.cloudinary.com/dcthljxbl/image/upload/v1731639108/Logo_mq_vglxby.png';
-    const rightImageUrl = 'https://res.cloudinary.com/dcthljxbl/image/upload/v1731639120/TUT_fnqspi.png';
-  
+    const leftImageUrl =
+      'https://res.cloudinary.com/dcthljxbl/image/upload/v1731639108/Logo_mq_vglxby.png';
+    const rightImageUrl =
+      'https://res.cloudinary.com/dcthljxbl/image/upload/v1731639120/TUT_fnqspi.png';
+
     try {
       // Mengunduh gambar kiri dan kanan secara bersamaan
       const [leftImageResponse, rightImageResponse] = await Promise.all([
         axios.get(leftImageUrl, { responseType: 'arraybuffer' }),
-        axios.get(rightImageUrl, { responseType: 'arraybuffer' })
+        axios.get(rightImageUrl, { responseType: 'arraybuffer' }),
       ]);
-  
+
       const leftImageBuffer = leftImageResponse.data;
       const rightImageBuffer = rightImageResponse.data;
-  
+
       // Menambahkan gambar dan teks ke PDF
       doc
         .image(leftImageBuffer, 50, 45, { width: 50 })
@@ -119,11 +121,11 @@ export class DownloadService extends BaseResponse {
         .font(this.FONT_REGULAR)
         .text(
           'Kp. Kebon Kelapa, RT.02/RW.011, Singasari, Kec. Jonggol, Kabupaten Bogor, Jawa Barat 16830',
-          { align: 'center' }
+          { align: 'center' },
         )
         .moveDown(1);
     } catch (error) {
-      console.error("Error loading images:", error);
+      console.error('Error loading images:', error);
     }
   }
 
@@ -255,7 +257,10 @@ export class DownloadService extends BaseResponse {
     doc: PDFKit.PDFDocument,
     response: Response,
   ): string {
-    const downloadsPath = path.join(os.homedir(), 'Downloads');
+    const fs = require('fs');
+    const path = require('path');
+    const os = require('os');
+    const downloadsPath = path.join(os.tmpdir(), 'downloads');
     const uniqueFilename = this.generateUniqueFilename();
     const filePath = path.join(downloadsPath, uniqueFilename);
 
@@ -266,7 +271,7 @@ export class DownloadService extends BaseResponse {
 
     const writeStream = fs.createWriteStream(filePath);
     doc.pipe(writeStream);
-
+    
     writeStream.on('finish', () => {
       response.download(filePath, uniqueFilename, (err) => {
         if (err) {
@@ -274,10 +279,14 @@ export class DownloadService extends BaseResponse {
           response.status(500).send('Gagal mengirim file.');
         } else {
           console.log('File berhasil disimpan dan dikirim.');
+          
+          // Menghapus file setelah di-download untuk menghindari akumulasi file
+          fs.unlink(filePath, (err) => {
+            if (err) console.error('Gagal menghapus file:', err);
+          });
         }
       });
     });
-
     doc.end();
     return filePath;
   }
