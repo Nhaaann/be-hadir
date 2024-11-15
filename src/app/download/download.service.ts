@@ -9,6 +9,7 @@ import BaseResponse from '../../utils/response/base.response';
 import { ResponseSuccess } from '../../utils/interface/respone';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as os from 'os';
+import axios from 'axios';
 
 interface AttendanceRecord {
   name: string;
@@ -86,30 +87,44 @@ export class DownloadService extends BaseResponse {
 
     return this._success('OK, berhasil download', response);
   }
-  private addHeaderAndImages(
+  private async addHeaderAndImages(
     doc: PDFKit.PDFDocument,
     isLandscape: boolean = false,
-  ): void {
-    const pageWidth = isLandscape ? 842 : 595; // A4 dimensions in points
-    const leftImagePath = 'https://res.cloudinary.com/dcthljxbl/image/upload/v1731639108/Logo_mq_vglxby.png';
-    const rightImagePath = 'https://res.cloudinary.com/dcthljxbl/image/upload/v1731639120/TUT_fnqspi.png';
-
-    doc
-      .image(leftImagePath, 50, 45, { width: 50 })
-      .image(rightImagePath, pageWidth - 100, 45, { width: 50 })
-      .fontSize(16)
-      .font(this.FONT_BOLD)
-      .text('YAYASAN PESANTREN WISATA ALAM', { align: 'center' })
-      .fontSize(14)
-      .text('SMK MADINATUL QURAN', { align: 'center' })
-      .moveDown(2)
-      .fontSize(10)
-      .font(this.FONT_REGULAR)
-      .text(
-        'Kp. Kebon Kelapa, RT.02/RW.011, Singasari, Kec. Jonggol, Kabupaten Bogor, Jawa Barat 16830',
-        { align: 'center' },
-      )
-      .moveDown(1);
+  ): Promise<void> {
+    const pageWidth = isLandscape ? 842 : 595;
+    const leftImageUrl = 'https://res.cloudinary.com/dcthljxbl/image/upload/v1731639108/Logo_mq_vglxby.png';
+    const rightImageUrl = 'https://res.cloudinary.com/dcthljxbl/image/upload/v1731639120/TUT_fnqspi.png';
+  
+    try {
+      // Mengunduh gambar kiri dan kanan secara bersamaan
+      const [leftImageResponse, rightImageResponse] = await Promise.all([
+        axios.get(leftImageUrl, { responseType: 'arraybuffer' }),
+        axios.get(rightImageUrl, { responseType: 'arraybuffer' })
+      ]);
+  
+      const leftImageBuffer = leftImageResponse.data;
+      const rightImageBuffer = rightImageResponse.data;
+  
+      // Menambahkan gambar dan teks ke PDF
+      doc
+        .image(leftImageBuffer, 50, 45, { width: 50 })
+        .image(rightImageBuffer, pageWidth - 100, 45, { width: 50 })
+        .fontSize(16)
+        .font(this.FONT_BOLD)
+        .text('YAYASAN PESANTREN WISATA ALAM', { align: 'center' })
+        .fontSize(14)
+        .text('SMK MADINATUL QURAN', { align: 'center' })
+        .moveDown(2)
+        .fontSize(10)
+        .font(this.FONT_REGULAR)
+        .text(
+          'Kp. Kebon Kelapa, RT.02/RW.011, Singasari, Kec. Jonggol, Kabupaten Bogor, Jawa Barat 16830',
+          { align: 'center' }
+        )
+        .moveDown(1);
+    } catch (error) {
+      console.error("Error loading images:", error);
+    }
   }
 
   private addReportTitle(doc: PDFKit.PDFDocument): void {
