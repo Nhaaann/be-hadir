@@ -76,17 +76,16 @@ export class DownloadService extends BaseResponse {
 
   async generateMonthlyReport(response: Response): Promise<ResponseSuccess> {
     const monthlyData = await this.getMonthlyAttendanceData();
-    // Create landscape PDF for monthly report
     const pdfDoc = this.createPDFDocument(true);
-
-    this.addHeaderAndImages(pdfDoc, true);
-    this.addMonthlyReportTitle(pdfDoc);
+  
+    this.addHeaderAndImages(pdfDoc, true); // Memastikan header dan gambar ditampilkan
+    this.addMonthlyReportTitle(pdfDoc); // Menggunakan judul khusus untuk laporan bulanan
     this.createMonthlyTable(pdfDoc, monthlyData);
-
+  
     const filePath = this.saveAndDownloadPDF(pdfDoc, response);
-
     return this._success('OK, berhasil download', response);
   }
+  
   private async addHeaderAndImages(
     doc: PDFKit.PDFDocument,
     isLandscape: boolean = false,
@@ -271,7 +270,7 @@ export class DownloadService extends BaseResponse {
 
     const writeStream = fs.createWriteStream(filePath);
     doc.pipe(writeStream);
-    
+
     writeStream.on('finish', () => {
       response.download(filePath, uniqueFilename, (err) => {
         if (err) {
