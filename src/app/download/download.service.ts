@@ -302,7 +302,7 @@ export class DownloadService extends BaseResponse {
     const fs = require('fs');
     const path = require('path');
     const os = require('os');
-    const downloadsPath = path.join(os.tmpdir(), 'downloads');
+    const downloadsPath = path.join(os.homedir(), 'Downloads');
     const uniqueFilename = this.generateUniqueFilename();
     const filePath = path.join(downloadsPath, uniqueFilename);
 
@@ -317,18 +317,23 @@ export class DownloadService extends BaseResponse {
     writeStream.on('finish', () => {
       response.download(filePath, uniqueFilename, (err) => {
         if (err) {
+          const fileStats = fs.statSync(filePath);
+          console.log(`File size: ${fileStats.size} bytes`);
           console.error('Gagal mengirim file:', err);
           response.status(500).send('Gagal mengirim file.');
         } else {
           console.log('File berhasil disimpan dan dikirim.');
-
+          console.log('downloadsPath', downloadsPath);
+          const fileStats = fs.statSync(filePath);
+          console.log(`File size: ${fileStats.size} bytes`);
           // Menghapus file setelah di-download untuk menghindari akumulasi file
-          fs.unlink(filePath, (err) => {
-            if (err) console.error('Gagal menghapus file:', err);
-          });
+          // fs.unlink(filePath, (err) => {
+          //   if (err) console.error('Gagal menghapus file:', err);
+          // });
         }
       });
     });
+
     doc.end();
     return filePath;
   }
