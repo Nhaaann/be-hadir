@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-inferrable-types */
 import { Injectable } from '@nestjs/common';
 import { Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as PDFKit from 'pdfkit';
+import PDFKit from 'pdfkit';
 import BaseResponse from '../../utils/response/base.response';
 import { ResponseSuccess } from '../../utils/interface/respone';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -56,10 +57,15 @@ export class DownloadService extends BaseResponse {
 
     const filePath = this.saveAndDownloadPDF(pdfDoc, response);
 
-    return this._success('OK, berhasil download', response);
+    if (filePath) {
+      return this._success('OK, berhasil download', response);
+    } else {
+      return this._error('Gagal membuat file', response as any);
+    }
   }
 
   private createPDFDocument(isLandscape: boolean = false): PDFKit.PDFDocument {
+    const PDFKit = require('pdfkit');
     return new PDFKit({
       size: this.PAGE_SIZE,
       layout: isLandscape ? 'landscape' : 'portrait',
@@ -80,7 +86,10 @@ export class DownloadService extends BaseResponse {
 
     return this._success('OK, berhasil download', response);
   }
-  private addHeaderAndImages(doc: PDFKit.PDFDocument, isLandscape: boolean = false): void {
+  private addHeaderAndImages(
+    doc: PDFKit.PDFDocument,
+    isLandscape: boolean = false,
+  ): void {
     const pageWidth = isLandscape ? 842 : 595; // A4 dimensions in points
     const leftImagePath = 'assets/Logo mq.png';
     const rightImagePath = 'assets/TUT.png';
@@ -112,16 +121,42 @@ export class DownloadService extends BaseResponse {
       .moveDown(1);
   }
 
-  private createAttendanceTable(doc: PDFKit.PDFDocument, data: AttendanceRecord[]): void {
+  private createAttendanceTable(
+    doc: PDFKit.PDFDocument,
+    data: AttendanceRecord[],
+  ): void {
     const startY = 200;
     const rowHeight = 30;
     const tableWidth = 500;
     const columnWidths = [30, 100, 70, 50, 50, 50, 50, 50, 50]; // Updated widths
-    const columns = ['No', 'Name', 'Class', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']; // Added "Class" column
-  
+    const columns = [
+      'No',
+      'Name',
+      'Class',
+      'Mon',
+      'Tue',
+      'Wed',
+      'Thu',
+      'Fri',
+      'Sat',
+    ]; // Added "Class" column
+
     this.drawTableHeader(doc, columns, 50, startY, columnWidths, rowHeight);
-    this.drawTableRows(doc, data, 50, startY + rowHeight, columnWidths, rowHeight);
-    this.drawTableOutline(doc, 50, startY, tableWidth, (data.length + 1) * rowHeight);
+    this.drawTableRows(
+      doc,
+      data,
+      50,
+      startY + rowHeight,
+      columnWidths,
+      rowHeight,
+    );
+    this.drawTableOutline(
+      doc,
+      50,
+      startY,
+      tableWidth,
+      (data.length + 1) * rowHeight,
+    );
   }
 
   private drawTableHeader(
@@ -237,11 +272,14 @@ export class DownloadService extends BaseResponse {
     return `laporan-rekap-mingguan-${formattedDate}-${formattedTime}.pdf`;
   }
 
-  private createMonthlyTable(doc: PDFKit.PDFDocument, data: MonthlyAttendanceRecord[]): void {
+  private createMonthlyTable(
+    doc: PDFKit.PDFDocument,
+    data: MonthlyAttendanceRecord[],
+  ): void {
     const startY = 200;
     const rowHeight = 30;
     const tableWidth = 631; // Adjusted for landscape A4
-    
+
     // Adjusted column widths for landscape orientation
     const mainColumns = [
       { width: 170, title: 'Name', isHeader: true }, // Increased width to accommodate combined columns
@@ -249,12 +287,25 @@ export class DownloadService extends BaseResponse {
       { width: 115, title: 'Week 2', subColumns: ['Att', 'Per', 'Ab', 'La'] },
       { width: 115, title: 'Week 3', subColumns: ['Att', 'Per', 'Ab', 'La'] },
       { width: 115, title: 'Week 4', subColumns: ['Att', 'Per', 'Ab', 'La'] },
-      { width: 82, title: 'Average %', isHeader: true } // Added isHeader flag
+      { width: 82, title: 'Average %', isHeader: true }, // Added isHeader flag
     ];
-  
+
     this.drawMonthlyTableHeader(doc, mainColumns, 50, startY, rowHeight);
-    this.drawMonthlyTableRows(doc, data, mainColumns, 50, startY + rowHeight * 2, rowHeight);
-    this.drawTableOutline(doc, 50, startY, tableWidth, (data.length + 2) * rowHeight);
+    this.drawMonthlyTableRows(
+      doc,
+      data,
+      mainColumns,
+      50,
+      startY + rowHeight * 2,
+      rowHeight,
+    );
+    this.drawTableOutline(
+      doc,
+      50,
+      startY,
+      tableWidth,
+      (data.length + 2) * rowHeight,
+    );
   }
 
   private drawMonthlyTableHeader(
@@ -265,11 +316,13 @@ export class DownloadService extends BaseResponse {
     rowHeight: number,
   ): void {
     let currentX = x;
-  
+
     // Draw main header row
-    columns.forEach(col => {
-      doc.rect(currentX, y, col.width, col.isHeader ? rowHeight * 2 : rowHeight).stroke();
-      
+    columns.forEach((col) => {
+      doc
+        .rect(currentX, y, col.width, col.isHeader ? rowHeight * 2 : rowHeight)
+        .stroke();
+
       if (col.isHeader) {
         // Center text vertically for headers that span two rows
         doc
@@ -287,24 +340,22 @@ export class DownloadService extends BaseResponse {
             width: col.width - 4,
             align: 'center',
           });
-  
+
         // Draw sub-columns
         if (col.subColumns) {
           const subWidth = col.width / 4;
           let subX = currentX;
-          col.subColumns.forEach(subCol => {
+          col.subColumns.forEach((subCol) => {
             doc.rect(subX, y + rowHeight, subWidth, rowHeight).stroke();
-            doc
-              .fontSize(9)
-              .text(subCol, subX + 2, y + rowHeight + 10, {
-                width: subWidth - 4,
-                align: 'center',
-              });
+            doc.fontSize(9).text(subCol, subX + 2, y + rowHeight + 10, {
+              width: subWidth - 4,
+              align: 'center',
+            });
             subX += subWidth;
           });
         }
       }
-  
+
       currentX += col.width;
     });
   }
@@ -320,39 +371,39 @@ export class DownloadService extends BaseResponse {
     data.forEach((record, rowIndex) => {
       let currentX = x;
       const currentY = y + rowIndex * rowHeight;
-  
+
       // Draw combined name and class
       doc.rect(currentX, currentY, columns[0].width, rowHeight).stroke();
       doc
         .fontSize(10)
         .font(this.FONT_REGULAR)
-        .text(`${record.name} - ${record.className}`, currentX + 4, currentY + 10, {
-          width: columns[0].width - 8,
-          align: 'center',
-        });
+        .text(
+          `${record.name} - ${record.className}`,
+          currentX + 4,
+          currentY + 10,
+          {
+            width: columns[0].width - 8,
+            align: 'center',
+          },
+        );
       currentX += columns[0].width;
-  
+
       // Draw weekly attendance data
-      ['week1', 'week2', 'week3', 'week4'].forEach(week => {
+      ['week1', 'week2', 'week3', 'week4'].forEach((week) => {
         const weekData = record[week];
         const weekWidth = columns[1].width;
         const subWidth = weekWidth / 4;
-  
-        ['att', 'per', 'ab', 'la'].forEach(status => {
+
+        ['att', 'per', 'ab', 'la'].forEach((status) => {
           doc.rect(currentX, currentY, subWidth, rowHeight).stroke();
-          doc.text(
-            weekData[status].toString(),
-            currentX + 2,
-            currentY + 10,
-            {
-              width: subWidth - 4,
-              align: 'center',
-            }
-          );
+          doc.text(weekData[status].toString(), currentX + 2, currentY + 10, {
+            width: subWidth - 4,
+            align: 'center',
+          });
           currentX += subWidth;
         });
       });
-  
+
       // Draw average percentage
       doc.rect(currentX, currentY, columns[5].width, rowHeight).stroke();
       doc.text(
@@ -362,7 +413,7 @@ export class DownloadService extends BaseResponse {
         {
           width: columns[5].width - 4,
           align: 'center',
-        }
+        },
       );
     });
   }
@@ -371,7 +422,7 @@ export class DownloadService extends BaseResponse {
     const currentDate = new Date();
     const month = currentDate.getMonth() + 1;
     const year = currentDate.getFullYear();
-  
+
     // Get attendance data for the entire month
     const absens = await this.prisma.absen_siswa.findMany({
       where: {
@@ -389,16 +440,16 @@ export class DownloadService extends BaseResponse {
         },
       },
     });
-  
+
     // Process attendance data into weekly records
     const attendanceMap = new Map<string, MonthlyAttendanceRecord>();
-  
-    absens.forEach(absen => {
+
+    absens.forEach((absen) => {
       const userName = absen.user?.nama || 'Unknown';
       const className = absen.jam_detail_jadwal?.kelas?.nama_kelas || 'Unknown';
       const date = new Date(absen.waktu_absen);
       const weekNumber = Math.ceil(date.getDate() / 7);
-  
+
       if (!attendanceMap.has(userName)) {
         attendanceMap.set(userName, {
           name: userName,
@@ -410,10 +461,10 @@ export class DownloadService extends BaseResponse {
           averagePercentage: 0,
         });
       }
-  
+
       const record = attendanceMap.get(userName);
       const weekData = record[`week${weekNumber}`];
-  
+
       // Update attendance counts based on status
       switch (absen.status?.toLowerCase()) {
         case 'hadir':
@@ -429,37 +480,49 @@ export class DownloadService extends BaseResponse {
           weekData.la++;
           break;
       }
-  
+
       // Logic to handle incomplete weeks and mark remaining days as "absent"
-      const totalAttendance = weekData.att + weekData.per + weekData.ab + weekData.la;
-      const maxWeekDays = 6;  // Maximum number of days in a week for this case
-  
+      const totalAttendance =
+        weekData.att + weekData.per + weekData.ab + weekData.la;
+      const maxWeekDays = 6; // Maximum number of days in a week for this case
+
       if (totalAttendance < maxWeekDays) {
         const missingDays = maxWeekDays - totalAttendance;
         weekData.ab += missingDays; // Mark the remaining days as absent
       }
-  
+
       // Calculate average percentage
-      const totalDays = ['week1', 'week2', 'week3', 'week4'].reduce((sum, week) => {
-        const w = record[week];
-        return sum + w.att + w.per + w.ab + w.la;
-      }, 0);
-  
-      const totalPresent = ['week1', 'week2', 'week3', 'week4'].reduce((sum, week) => {
-        const w = record[week];
-        return sum + w.att;
-      }, 0);
-  
-      record.averagePercentage = totalDays > 0 ? parseFloat(((totalPresent / totalDays) *  100).toFixed(1)) : 0;
+      const totalDays = ['week1', 'week2', 'week3', 'week4'].reduce(
+        (sum, week) => {
+          const w = record[week];
+          return sum + w.att + w.per + w.ab + w.la;
+        },
+        0,
+      );
+
+      const totalPresent = ['week1', 'week2', 'week3', 'week4'].reduce(
+        (sum, week) => {
+          const w = record[week];
+          return sum + w.att;
+        },
+        0,
+      );
+
+      record.averagePercentage =
+        totalDays > 0
+          ? parseFloat(((totalPresent / totalDays) * 100).toFixed(1))
+          : 0;
     });
-  
+
     return Array.from(attendanceMap.values());
   }
-  
 
   private addMonthlyReportTitle(doc: PDFKit.PDFDocument): void {
     const currentDate = new Date();
-    const monthName = currentDate.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+    const monthName = currentDate.toLocaleString('id-ID', {
+      month: 'long',
+      year: 'numeric',
+    });
 
     doc
       .moveDown(1)
