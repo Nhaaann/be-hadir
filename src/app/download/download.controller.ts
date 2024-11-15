@@ -1,4 +1,4 @@
-import { Controller, Get, Res } from '@nestjs/common';
+import { Controller, Get, Query, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { DownloadService } from './download.service';
 
@@ -7,9 +7,12 @@ export class DownloadController {
   constructor(private readonly downloadService: DownloadService) {}
 
   @Get('pdf-week')
-  async downloadAttendanceReport(@Res() res: Response): Promise<void> {
+  async downloadAttendanceReport(
+    @Res() res: Response,
+    @Query('role') role: string,
+  ): Promise<void> {
     try {
-      await this.downloadService.generateAttendanceReport(res);
+      await this.downloadService.generateAttendanceReport(res, role);
     } catch (error) {
       console.error('Error generating attendance report:', error);
       res.status(500).send('Failed to generate report');
@@ -17,9 +20,12 @@ export class DownloadController {
   }
 
   @Get('pdf-month')
-  async downloadAttendanceReportMontly(@Res() res: Response): Promise<void> {
+  async downloadAttendanceReportMontly(
+    @Res() res: Response,
+    @Query('role') role: string,
+  ): Promise<void> {
     try {
-      await this.downloadService.generateMonthlyReport(res);
+      await this.downloadService.generateMonthlyReport(res, role);
     } catch (error) {
       console.error('Error generating attendance report:', error);
       res.status(500).send('Failed to generate report');
@@ -27,8 +33,8 @@ export class DownloadController {
   }
 
   @Get('preview-data-week')
-  async previewAttendanceData(): Promise<any> {
-    const attendanceData = await this.downloadService.getAttendanceData();
+  async previewAttendanceData(@Query('role') role: string): Promise<any> {
+    const attendanceData = await this.downloadService.getAttendanceData(role);
     return {
       status: 'Success',
       message: 'Preview of attendance data',
@@ -37,8 +43,10 @@ export class DownloadController {
   }
 
   @Get('preview-data-month')
-  async previewAttendanceDataMOntly(): Promise<any> {
-    const attendanceData = await this.downloadService.getMonthlyAttendanceData();
+  async previewAttendanceDataMOntly(@Query('role') role: string): Promise<any> {
+    const attendanceData = await this.downloadService.getMonthlyAttendanceData(
+      role,
+    );
     return {
       status: 'Success',
       message: 'Preview of attendance data',

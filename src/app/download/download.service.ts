@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
-import PDFKit from 'pdfkit';
+import PDFKit, { x } from 'pdfkit';
 import BaseResponse from '../../utils/response/base.response';
 import { ResponseSuccess } from '../../utils/interface/respone';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -48,12 +48,15 @@ export class DownloadService extends BaseResponse {
     super();
   }
 
-  async generateAttendanceReport(response: Response): Promise<ResponseSuccess> {
-    const dummyData = this.getAttendanceData();
+  async generateAttendanceReport(
+    response: Response,
+    role: string,
+  ): Promise<ResponseSuccess> {
+    const dummyData = this.getAttendanceData(role);
     const pdfDoc = this.createPDFDocument();
 
     this.addHeaderAndImages(pdfDoc);
-    this.addReportTitle(pdfDoc);
+    this.addReportTitle(pdfDoc, role);
     this.createAttendanceTable(pdfDoc, await dummyData);
 
     const filePath = this.saveAndDownloadPDF(pdfDoc, response);
@@ -74,18 +77,26 @@ export class DownloadService extends BaseResponse {
     });
   }
 
-  async generateMonthlyReport(response: Response): Promise<ResponseSuccess> {
-    const monthlyData = await this.getMonthlyAttendanceData();
-    const pdfDoc = this.createPDFDocument(true);
-  
-    this.addHeaderAndImages(pdfDoc, true); // Memastikan header dan gambar ditampilkan
-    this.addMonthlyReportTitle(pdfDoc); // Menggunakan judul khusus untuk laporan bulanan
+  async generateMonthlyReport(
+    response: Response,
+    role: string,
+  ): Promise<ResponseSuccess> {
+    const monthlyData = await this.getMonthlyAttendanceData(role);
+    const pdfDoc = this.createPDFDocument(true); // Set to landscape
+
+    // Menambahkan await untuk memastikan header selesai ditambahkan
+    await this.addHeaderAndImages(pdfDoc, true);
+
+    // Tunggu sejenak untuk memastikan gambar telah dimuat
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    this.addMonthlyReportTitle(pdfDoc, role);
     this.createMonthlyTable(pdfDoc, monthlyData);
-  
+
     const filePath = this.saveAndDownloadPDF(pdfDoc, response);
     return this._success('OK, berhasil download', response);
   }
-  
+
   private async addHeaderAndImages(
     doc: PDFKit.PDFDocument,
     isLandscape: boolean = false,
@@ -106,34 +117,66 @@ export class DownloadService extends BaseResponse {
       const leftImageBuffer = leftImageResponse.data;
       const rightImageBuffer = rightImageResponse.data;
 
-      // Menambahkan gambar dan teks ke PDF
+      // Posisi dan ukuran gambar disesuaikan
+      const imageWidth = 50;
+      const imageY = 45;
+      const headerCenterX = pageWidth / 2;
+      const headerWidth = 400; // Lebar fixed untuk header text
+      const headerX = headerCenterX - headerWidth / 2;
+
+      // Menambahkan gambar dan teks ke PDF dengan posisi yang disesuaikan
       doc
-        .image(leftImageBuffer, 50, 45, { width: 50 })
-        .image(rightImageBuffer, pageWidth - 100, 45, { width: 50 })
-        .fontSize(16)
+        .image(leftImageBuffer, 50, imageY, { width: imageWidth })
+        .image(rightImageBuffer, pageWidth - 100, imageY, { width: imageWidth })
         .font(this.FONT_BOLD)
-        .text('YAYASAN PESANTREN WISATA ALAM', { align: 'center' })
+        .fontSize(16)
+        .text('YAYASAN PESANTREN WISATA ALAM', headerX, imageY, {
+          align: 'center',
+          width: headerWidth,
+        })
         .fontSize(14)
-        .text('SMK MADINATUL QURAN', { align: 'center' })
-        .moveDown(2)
+        .text('SMK MADINATUL QURAN', headerX, doc.y, {
+          align: 'center',
+          width: headerWidth,
+        })
+        .moveDown(0.5)
         .fontSize(10)
         .font(this.FONT_REGULAR)
         .text(
           'Kp. Kebon Kelapa, RT.02/RW.011, Singasari, Kec. Jonggol, Kabupaten Bogor, Jawa Barat 16830',
-          { align: 'center' },
+          headerX,
+          doc.y,
+          {
+            align: 'center',
+            width: headerWidth,
+          },
         )
         .moveDown(1);
+
+      // Tambahkan garis pemisah header
+      doc
+        .moveTo(50, 160)
+        .lineTo(pageWidth - 50, 160)
+        .stroke();
     } catch (error) {
       console.error('Error loading images:', error);
+      // Fallback jika gambar gagal dimuat
+      doc
+        .font(this.FONT_BOLD)
+        .fontSize(16)
+        .text('YAYASAN PESANTREN WISATA ALAM', { align: 'center' })
+        .fontSize(14)
+        .text('SMK MADINATUL QURAN', { align: 'center' })
+        .moveDown(0.5);
     }
   }
 
-  private addReportTitle(doc: PDFKit.PDFDocument): void {
+  private addReportTitle(doc: PDFKit.PDFDocument, role: string): void {
     doc
       .moveDown(1)
       .fontSize(18)
       .font(this.FONT_BOLD)
-      .text('Laporan Rekap Mingguan', { align: 'center' })
+      .text(`Laporan Rekap Mingguan - ${role}`, -200, doc.y, { align: 'left' })
       .moveDown(1);
   }
 
@@ -278,7 +321,7 @@ export class DownloadService extends BaseResponse {
           response.status(500).send('Gagal mengirim file.');
         } else {
           console.log('File berhasil disimpan dan dikirim.');
-          
+
           // Menghapus file setelah di-download untuk menghindari akumulasi file
           fs.unlink(filePath, (err) => {
             if (err) console.error('Gagal menghapus file:', err);
@@ -443,7 +486,9 @@ export class DownloadService extends BaseResponse {
     });
   }
 
-  async getMonthlyAttendanceData(): Promise<MonthlyAttendanceRecord[]> {
+  async getMonthlyAttendanceData(
+    role: string,
+  ): Promise<MonthlyAttendanceRecord[]> {
     const currentDate = new Date();
     const month = currentDate.getMonth() + 1;
     const year = currentDate.getFullYear();
@@ -451,6 +496,7 @@ export class DownloadService extends BaseResponse {
     // Get attendance data for the entire month
     const absens = await this.prisma.absen_siswa.findMany({
       where: {
+        user: { role: role as any },
         waktu_absen: {
           gte: new Date(year, month - 1, 1),
           lt: new Date(year, month, 1),
@@ -542,7 +588,7 @@ export class DownloadService extends BaseResponse {
     return Array.from(attendanceMap.values());
   }
 
-  private addMonthlyReportTitle(doc: PDFKit.PDFDocument): void {
+  private addMonthlyReportTitle(doc: PDFKit.PDFDocument, role: string): void {
     const currentDate = new Date();
     const monthName = currentDate.toLocaleString('id-ID', {
       month: 'long',
@@ -550,14 +596,16 @@ export class DownloadService extends BaseResponse {
     });
 
     doc
-      .moveDown(1)
+      .moveDown(0.5)
       .fontSize(18)
       .font(this.FONT_BOLD)
-      .text(`Laporan Rekap Bulanan - ${monthName}`, { align: 'center' })
+      .text(`Laporan Rekap Bulanan ${role} - ${monthName}`, 0, doc.y, {
+        align: 'center',
+      })
       .moveDown(1);
   }
 
-  async getAttendanceData(): Promise<AttendanceRecord[]> {
+  async getAttendanceData(role: any): Promise<AttendanceRecord[]> {
     // Get the current date
     const currentDate = new Date();
     const month = currentDate.getMonth() + 1;
@@ -567,6 +615,9 @@ export class DownloadService extends BaseResponse {
     // Get attendance data using the existing list method logic
     const absens = await this.prisma.absen_siswa.findMany({
       where: {
+        user: {
+          role,
+        },
         waktu_absen: {
           gte: new Date(year, month - 1, (week - 1) * 7 + 1),
           lte: new Date(year, month - 1, week * 7),
