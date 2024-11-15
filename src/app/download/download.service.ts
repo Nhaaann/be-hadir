@@ -8,6 +8,7 @@ import PDFKit from 'pdfkit';
 import BaseResponse from '../../utils/response/base.response';
 import { ResponseSuccess } from '../../utils/interface/respone';
 import { PrismaService } from 'src/prisma/prisma.service';
+import * as os from 'os';
 
 interface AttendanceRecord {
   name: string;
@@ -37,7 +38,6 @@ interface MonthlyAttendanceRecord {
 
 @Injectable()
 export class DownloadService extends BaseResponse {
-  private readonly DOWNLOAD_PATH = 'D:\\Users\\fatin\\Downloads\\pdf';
   private readonly PAGE_SIZE = 'A4';
   private readonly PAGE_LAYOUT = 'portrait';
   private readonly FONT_REGULAR = 'Helvetica';
@@ -91,8 +91,8 @@ export class DownloadService extends BaseResponse {
     isLandscape: boolean = false,
   ): void {
     const pageWidth = isLandscape ? 842 : 595; // A4 dimensions in points
-    const leftImagePath = 'assets/Logo mq.png';
-    const rightImagePath = 'assets/TUT.png';
+    const leftImagePath = 'https://res.cloudinary.com/dcthljxbl/image/upload/v1731639108/Logo_mq_vglxby.png';
+    const rightImagePath = 'https://res.cloudinary.com/dcthljxbl/image/upload/v1731639120/TUT_fnqspi.png';
 
     doc
       .image(leftImagePath, 50, 45, { width: 50 })
@@ -240,11 +240,13 @@ export class DownloadService extends BaseResponse {
     doc: PDFKit.PDFDocument,
     response: Response,
   ): string {
+    const downloadsPath = path.join(os.homedir(), 'Downloads');
     const uniqueFilename = this.generateUniqueFilename();
-    const filePath = path.join(this.DOWNLOAD_PATH, uniqueFilename);
+    const filePath = path.join(downloadsPath, uniqueFilename);
 
-    if (!fs.existsSync(this.DOWNLOAD_PATH)) {
-      fs.mkdirSync(this.DOWNLOAD_PATH, { recursive: true });
+    // Membuat folder jika belum ada
+    if (!fs.existsSync(downloadsPath)) {
+      fs.mkdirSync(downloadsPath, { recursive: true });
     }
 
     const writeStream = fs.createWriteStream(filePath);
