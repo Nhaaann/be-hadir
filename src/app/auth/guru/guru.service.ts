@@ -302,7 +302,7 @@ export class GuruService extends BaseResponse {
   async getGuruListWithSubject(query: any): Promise<ResponsePagination> {
     const {
       page = 1,
-      pageSize = 10,
+      pageSize = 20,
       sort_by = 'id',
       nama,
       nama_mapel,
