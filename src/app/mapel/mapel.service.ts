@@ -66,7 +66,7 @@ export class MapelService extends BaseResponse {
   async findAll(query: any): Promise<ResponsePagination> {
     const {
       page = 1,
-      pageSize = 10,
+      pageSize = 20,
       nama_mapel,
       limit,
       sort_by = 'id',
